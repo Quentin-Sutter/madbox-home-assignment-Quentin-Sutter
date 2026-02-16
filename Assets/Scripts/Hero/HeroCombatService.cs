@@ -94,9 +94,10 @@ namespace Madbox.Hero
                 return;
             }
 
-            if (target.TryGetComponent(out EnemyTargetable enemyTargetable) && enemyTargetable.Damageable != null)
+            if (target.TryGetComponent(out EnemyTargetable enemyTargetable) &&
+                enemyTargetable.TryGetDamageable(out IDamageable cachedDamageable))
             {
-                enemyTargetable.Damageable.ApplyDamage(attackDamage);
+                cachedDamageable.ApplyDamage(attackDamage);
                 return;
             }
 
