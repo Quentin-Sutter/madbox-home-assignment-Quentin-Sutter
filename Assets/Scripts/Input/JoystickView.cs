@@ -53,25 +53,29 @@ namespace Madbox.Input
 
             SetVisible(true);
 
-            Vector2 knobScreenPos = state.BaseScreenPosition + state.KnobScreenOffset;
             Camera eventCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
                 ? canvas.worldCamera
                 : null;
 
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                targetRect,
-                state.BaseScreenPosition,
-                eventCamera,
-                out Vector2 baseLocalPos);
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    targetRect,
+                    state.BaseScreenPosition,
+                    eventCamera,
+                    out Vector2 baseLocalPos))
+            {
+                return;
+            }
 
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                targetRect,
-                knobScreenPos,
-                eventCamera,
-                out Vector2 knobLocalPos);
+            // Keep all UI movement in local canvas units so this works with any resolution
+            // and with Canvas Scaler (Scale With Screen Size).
+            float baseRadius = Mathf.Min(baseRect.rect.width, baseRect.rect.height) * 0.5f;
+            float knobRadius = Mathf.Min(knobRect.rect.width, knobRect.rect.height) * 0.5f;
+            float visualRadius = Mathf.Max(0f, baseRadius - knobRadius);
+
+            Vector2 knobOffset = state.Direction * (visualRadius * state.Magnitude01);
 
             baseRect.anchoredPosition = baseLocalPos;
-            knobRect.anchoredPosition = knobLocalPos;
+            knobRect.anchoredPosition = baseLocalPos + knobOffset;
         }
 
         private void SetVisible(bool visible)
