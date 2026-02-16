@@ -34,6 +34,7 @@ namespace Madbox.Hero
         [SerializeField] private JoystickInput inputSource;
         [SerializeField] private HeroMovement movement;
         [SerializeField] private HeroRotation rotation;
+        [SerializeField] private HeroAnimationDriver animationDriver;
 
         [Header("Tuning")]
         [SerializeField, Range(0f, 1f)] private float moveDeadzone = 0.05f;
@@ -138,13 +139,16 @@ namespace Madbox.Hero
                 case HeroState.Move:
                     movement.Move(intent.WorldDirection, intent.Strength);
                     rotation.FaceDirection(intent.WorldDirection);
+                    animationDriver?.SetMoveAmount(intent.Strength);
                     break;
 
                 case HeroState.Attack:
+                    animationDriver?.SetMoveAmount(0f);
                     TickAttackState();
                     break;
 
                 case HeroState.Idle:
+                    animationDriver?.SetMoveAmount(0f);
                     TickIdleState();
                     break;
             }
