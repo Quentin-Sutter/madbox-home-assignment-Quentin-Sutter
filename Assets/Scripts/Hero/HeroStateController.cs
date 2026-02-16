@@ -124,6 +124,11 @@ namespace Madbox.Hero
             {
                 movement.Stop();
             }
+
+            if (state == HeroState.Attack)
+            {
+                _combatService?.CancelAttack();
+            }
         }
 
         private void TickCurrentState(MoveIntent intent)
