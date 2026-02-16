@@ -1,23 +1,18 @@
-using Madbox.Input;
 using UnityEngine;
 
 namespace Madbox.Movement
 {
     /// <summary>
-    /// Consumes MoveIntent and moves the hero independently from input detection/UI.
+    /// Executes hero translation from externally provided movement intent.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HeroMovement : MonoBehaviour
     {
-        [SerializeField] private JoystickInput inputSource;
         [SerializeField, Min(0f)] private float baseMoveSpeed = 5f;
-        [SerializeField] private bool rotateToMovement = true;
-        [SerializeField, Min(0f)] private float rotationLerpSpeed = 12f;
 
         public bool IsMoving { get; private set; }
 
         private CharacterController _characterController;
-        private bool _inputWarningShown;
         private bool _controllerWarningShown;
 
         private void Awake()
@@ -30,40 +25,37 @@ namespace Madbox.Movement
             }
         }
 
-        private void Update()
+        public void Move(Vector3 worldDirection, float strength)
         {
-            if (inputSource == null)
-            {
-                IsMoving = false;
-                if (!_inputWarningShown)
-                {
-                    Debug.LogWarning("HeroMovement: inputSource is not assigned.");
-                    _inputWarningShown = true;
-                }
+            Vector3 planarDirection = new Vector3(worldDirection.x, 0f, worldDirection.z);
+            float clampedStrength = Mathf.Clamp01(strength);
 
-                return;
+            if (planarDirection.sqrMagnitude > 0.0001f)
+            {
+                planarDirection.Normalize();
+            }
+            else
+            {
+                planarDirection = Vector3.zero;
+                clampedStrength = 0f;
             }
 
-            MoveIntent intent = inputSource.CurrentIntent;
-            IsMoving = intent.IsMoving && intent.Strength > 0f && intent.WorldDirection.sqrMagnitude > 0f;
-
-            Vector3 velocity = intent.WorldDirection * (baseMoveSpeed * intent.Strength);
+            IsMoving = clampedStrength > 0f;
+            Vector3 velocity = planarDirection * (baseMoveSpeed * clampedStrength);
             Vector3 displacement = velocity * Time.deltaTime;
 
             if (_characterController != null)
             {
                 _characterController.Move(displacement);
-            }
-            else
-            {
-                transform.position += displacement;
+                return;
             }
 
-            if (rotateToMovement && IsMoving)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(intent.WorldDirection, Vector3.up);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationLerpSpeed * Time.deltaTime);
-            }
+            transform.position += displacement;
+        }
+
+        public void Stop()
+        {
+            IsMoving = false;
         }
     }
 }
