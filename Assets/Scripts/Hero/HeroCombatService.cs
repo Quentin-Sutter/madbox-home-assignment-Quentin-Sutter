@@ -56,7 +56,6 @@ namespace Madbox.Hero
             _currentTarget = null;
             _isAttacking = false;
             _damagePending = false;
-            _nextAttackTime = 0f;
         }
 
         /// <summary>
