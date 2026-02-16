@@ -3,15 +3,16 @@ using UnityEngine;
 namespace Madbox.Hero
 {
     /// <summary>
-    /// Minimal auto-attack service with cooldown and optional animation hooks.
+    /// Owns combat timing and damage application.
+    /// Animation playback is delegated to HeroAnimationDriver.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HeroCombatService : MonoBehaviour, IHeroCombatService
     {
         [SerializeField, Min(0.05f)] private float attackCooldownSeconds = 0.75f;
         [SerializeField, Min(1)] private int attackDamage = 1;
-        [SerializeField] private Animator animator;
-        [SerializeField] private string attackTriggerName = "Attack";
+        [SerializeField] private HeroAnimationDriver animationDriver;
+        [SerializeField, Min(0f)] private float attackSpeedMultiplier = 1f;
         [SerializeField] private bool useAnimationEventForDamage;
 
         private Transform _currentTarget;
@@ -75,11 +76,7 @@ namespace Madbox.Hero
         private void PerformAttack()
         {
             _nextAttackTime = Time.time + attackCooldownSeconds;
-
-            if (animator != null && !string.IsNullOrEmpty(attackTriggerName))
-            {
-                animator.SetTrigger(attackTriggerName);
-            }
+            animationDriver?.TriggerAttack(attackSpeedMultiplier);
 
             if (useAnimationEventForDamage)
             {
