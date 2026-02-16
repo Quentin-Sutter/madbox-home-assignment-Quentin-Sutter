@@ -3,12 +3,13 @@ using UnityEngine;
 namespace Madbox.Hero
 {
     /// <summary>
-    /// View-only animation bridge for hero locomotion and reactive triggers.
+    /// Owns all hero Animator interactions.
     /// Required Animator parameters by default:
     /// - Float: MoveSpeed (0..1)
     /// - Trigger: Damage
     /// - Trigger: Die
-    /// Attack trigger remains owned by HeroCombatService (default "Attack").
+    /// - Float: AttackSpeedMultiplier
+    /// - Trigger: Attack
     /// For hit-frame timing, add an animation event in the attack clip that calls
     /// HeroCombatService.AnimationEvent_DealDamage().
     /// </summary>
@@ -22,11 +23,13 @@ namespace Madbox.Hero
         [SerializeField] private string damageTriggerParam = "Damage";
         [SerializeField] private string dieTriggerParam = "Die";
         [SerializeField] private string attackSpeedMultiplierParam = "AttackSpeedMultiplier";
+        [SerializeField] private string attackTriggerParam = "Attack";
 
         private int _moveSpeedHash;
         private int _damageTriggerHash;
         private int _dieTriggerHash;
         private int _attackSpeedMultiplierHash;
+        private int _attackTriggerHash;
         private bool _hasDieTriggered;
 
         private void Awake()
@@ -75,14 +78,15 @@ namespace Madbox.Hero
             animator.SetTrigger(_dieTriggerHash);
         }
 
-        public void SetAttackSpeedMultiplier(float multiplier)
+        public void TriggerAttack(float speedMultiplier)
         {
             if (animator == null)
             {
                 return;
             }
 
-            animator.SetFloat(_attackSpeedMultiplierHash, Mathf.Max(0f, multiplier));
+            animator.SetFloat(_attackSpeedMultiplierHash, Mathf.Max(0f, speedMultiplier));
+            animator.SetTrigger(_attackTriggerHash);
         }
 
         private void CacheHashes()
@@ -91,6 +95,7 @@ namespace Madbox.Hero
             _damageTriggerHash = Animator.StringToHash(damageTriggerParam);
             _dieTriggerHash = Animator.StringToHash(dieTriggerParam);
             _attackSpeedMultiplierHash = Animator.StringToHash(attackSpeedMultiplierParam);
+            _attackTriggerHash = Animator.StringToHash(attackTriggerParam);
         }
     }
 }
