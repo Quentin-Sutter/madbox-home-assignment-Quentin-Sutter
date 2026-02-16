@@ -498,6 +498,8 @@ GameObject:
   - component: {fileID: 5640136942777245500}
   - component: {fileID: 6432174883311883689}
   - component: {fileID: 2291742064611143131}
+  - component: {fileID: 6745011342466314413}
+  - component: {fileID: 5590409254622792329}
   m_Layer: 0
   m_Name: Hero
   m_TagString: Untagged
@@ -645,7 +647,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03f8338ff8564c549286b2b8a8402869, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackCooldownSeconds: 0.75
+  attackCooldownSeconds: 1.5
   attackDamage: 1
   animationDriver: {fileID: 3818201722713362545}
   attackSpeedMultiplier: 1
@@ -676,6 +678,46 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &6745011342466314413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3206923099687242354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c7647d5218e4dcb90cde9704df3229a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 3
+--- !u!54 &5590409254622792329
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3206923099687242354}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1 &3512741108777884559
 GameObject:
   m_ObjectHideFlags: 0
