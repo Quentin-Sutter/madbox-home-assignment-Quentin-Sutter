@@ -17,6 +17,11 @@ namespace Madbox.Input
         public MoveIntent CurrentIntent { get; private set; } = MoveIntent.Idle;
         public JoystickVisualState CurrentVisualState { get; private set; } = JoystickVisualState.Hidden;
 
+        public bool IsActive => _isDragging;
+        public Vector2 BaseScreenPosition => _pressStartScreenPos;
+        public Vector2 Direction { get; private set; } = Vector2.zero;
+        public float Magnitude01 { get; private set; }
+
         private bool _isDragging;
         private Vector2 _pressStartScreenPos;
         private bool _cameraWarningShown;
@@ -61,7 +66,9 @@ namespace Madbox.Input
         {
             _isDragging = true;
             _pressStartScreenPos = pressScreenPos;
-            CurrentVisualState = new JoystickVisualState(true, _pressStartScreenPos, Vector2.zero);
+            Direction = Vector2.zero;
+            Magnitude01 = 0f;
+            CurrentVisualState = new JoystickVisualState(true, _pressStartScreenPos, Direction, Magnitude01);
             CurrentIntent = MoveIntent.Idle;
         }
 
@@ -77,16 +84,20 @@ namespace Madbox.Input
                 ? Mathf.InverseLerp(deadzone, 1f, normalizedMagnitude)
                 : 0f;
 
-            Vector2 knobOffset = direction * (normalizedMagnitude * joystickRadius);
-            Vector3 worldDirection = isMoving ? ToWorldDirection(direction) : Vector3.zero;
+            Direction = direction;
+            Magnitude01 = normalizedMagnitude;
+
+            Vector3 worldDirection = isMoving ? ToWorldDirection(Direction) : Vector3.zero;
 
             CurrentIntent = new MoveIntent(worldDirection, adjustedStrength, isMoving);
-            CurrentVisualState = new JoystickVisualState(true, _pressStartScreenPos, knobOffset);
+            CurrentVisualState = new JoystickVisualState(true, _pressStartScreenPos, Direction, Magnitude01);
         }
 
         private void EndDrag()
         {
             _isDragging = false;
+            Direction = Vector2.zero;
+            Magnitude01 = 0f;
             CurrentIntent = MoveIntent.Idle;
             CurrentVisualState = JoystickVisualState.Hidden;
         }

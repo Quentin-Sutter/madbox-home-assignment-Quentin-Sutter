@@ -9,15 +9,17 @@ namespace Madbox.Input
     {
         public bool IsActive;
         public Vector2 BaseScreenPosition;
-        public Vector2 KnobScreenOffset;
+        public Vector2 Direction;
+        public float Magnitude01;
 
-        public JoystickVisualState(bool isActive, Vector2 baseScreenPosition, Vector2 knobScreenOffset)
+        public JoystickVisualState(bool isActive, Vector2 baseScreenPosition, Vector2 direction, float magnitude01)
         {
             IsActive = isActive;
             BaseScreenPosition = baseScreenPosition;
-            KnobScreenOffset = knobScreenOffset;
+            Direction = direction;
+            Magnitude01 = Mathf.Clamp01(magnitude01);
         }
 
-        public static JoystickVisualState Hidden => new(false, Vector2.zero, Vector2.zero);
+        public static JoystickVisualState Hidden => new(false, Vector2.zero, Vector2.zero, 0f);
     }
 }
