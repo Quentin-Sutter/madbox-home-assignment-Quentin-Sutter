@@ -94,10 +94,16 @@ namespace Madbox.Hero
                 return;
             }
 
-            EnemyHealth enemyHealth = target.GetComponent<EnemyHealth>();
-            if (enemyHealth != null)
+            if (target.TryGetComponent(out EnemyTargetable enemyTargetable) && enemyTargetable.Damageable != null)
             {
-                enemyHealth.ApplyDamage(attackDamage);
+                enemyTargetable.Damageable.ApplyDamage(attackDamage);
+                return;
+            }
+
+            IDamageable damageable = target.GetComponent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.ApplyDamage(attackDamage);
                 return;
             }
 
