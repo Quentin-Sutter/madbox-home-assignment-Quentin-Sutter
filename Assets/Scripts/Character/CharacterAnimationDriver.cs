@@ -46,7 +46,11 @@ namespace Madbox.Character
                 return;
             }
 
-            if (attackClip != null)
+            if (attackClip == null)
+            {
+                Debug.LogWarning("CharacterAnimationDriver: Attack clip is not assigned. Falling back to a 1 second base attack length.", this);
+            }
+            else
             {
                 _baseAttackLengthSeconds = Mathf.Max(0.01f, attackClip.length);
             }

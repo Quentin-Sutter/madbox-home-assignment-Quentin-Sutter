@@ -12,8 +12,6 @@ namespace Madbox.Character
     {
         [SerializeField, Min(1)] private int attackDamage = 1;
         [SerializeField] private CharacterAnimationDriver animationDriver;
-        [SerializeField, Min(0.05f)] private float defaultAttackCooldownSeconds = 0.75f;
-        [SerializeField, Min(0f)] private float defaultDamageDelaySeconds = 0.1f;
 
         public event Action<float> OnAttackCooldownStarted;
 
@@ -23,6 +21,7 @@ namespace Madbox.Character
 
         private bool _damagePending;
         private float _damageApplyTime;
+        private int _pendingDamageVersion;
 
         private WeaponData _currentWeapon;
 
@@ -30,8 +29,8 @@ namespace Madbox.Character
         {
             if (_damagePending && Time.time >= _damageApplyTime)
             {
-                ApplyDamage(_currentTarget);
-                _damagePending = false;
+                int pendingVersion = _pendingDamageVersion;
+                ApplyPendingDamage(pendingVersion);
             }
 
             if (!_isAttacking)
@@ -53,7 +52,7 @@ namespace Madbox.Character
 
         public bool TryStartAttack(Transform target)
         {
-            if (!IsTargetValid(target) || Time.time < _nextAttackTime)
+            if (!IsTargetValid(target) || Time.time < _nextAttackTime || _currentWeapon == null)
             {
                 return false;
             }
@@ -69,6 +68,7 @@ namespace Madbox.Character
             _currentTarget = null;
             _isAttacking = false;
             _damagePending = false;
+            _pendingDamageVersion++;
         }
 
         public void SetWeapon(WeaponData weapon)
@@ -78,7 +78,12 @@ namespace Madbox.Character
 
         private void PerformAttack()
         {
-            float cooldown = GetAttackCooldownSeconds();
+            if (_currentWeapon == null)
+            {
+                return;
+            }
+
+            float cooldown = Mathf.Max(0.01f, _currentWeapon.AttackCooldownSeconds);
             _nextAttackTime = Time.time + cooldown;
 
             float animationSpeed = animationDriver != null
@@ -88,29 +93,21 @@ namespace Madbox.Character
             animationDriver?.TriggerAttack(animationSpeed);
             OnAttackCooldownStarted?.Invoke(cooldown);
 
-            float damageDelay = GetDamageDelaySeconds();
-            _damageApplyTime = Time.time + damageDelay;
+            float hitDelay = cooldown * Mathf.Clamp01(_currentWeapon.HitTimeNormalized);
+            _damageApplyTime = Time.time + hitDelay;
             _damagePending = true;
+            _pendingDamageVersion++;
         }
 
-        private float GetAttackCooldownSeconds()
+        private void ApplyPendingDamage(int pendingVersion)
         {
-            if (_currentWeapon == null)
+            if (!_damagePending || pendingVersion != _pendingDamageVersion)
             {
-                return Mathf.Max(0.01f, defaultAttackCooldownSeconds);
+                return;
             }
 
-            return Mathf.Max(0.01f, _currentWeapon.AttackCooldownSeconds);
-        }
-
-        private float GetDamageDelaySeconds()
-        {
-            if (_currentWeapon == null)
-            {
-                return Mathf.Max(0f, defaultDamageDelaySeconds);
-            }
-
-            return Mathf.Max(0f, _currentWeapon.DamageDelaySeconds);
+            _damagePending = false;
+            ApplyDamage(_currentTarget);
         }
 
         private void ApplyDamage(Transform target)
