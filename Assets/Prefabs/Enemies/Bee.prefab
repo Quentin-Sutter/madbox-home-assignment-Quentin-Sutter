@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1205896626021827534}
   - component: {fileID: 1824092324133649063}
   - component: {fileID: 3954790861117084392}
+  - component: {fileID: 3569997225871375136}
   m_Layer: 0
   m_Name: Bee
   m_TagString: Untagged
@@ -95,6 +96,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   health: {fileID: 4469040851536800705}
+--- !u!114 &3569997225871375136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1358921057130329688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43df334dd6f54f8fb9a3ccf99036defe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 6926839794853975167}
+  health: {fileID: 4469040851536800705}
+  idleState: Anim_Beez_Idle
+  moveState: Anim_Beez_Move
+  attackState: Anim_Beez_Attack
+  damageState: Anim_Beez_Damage
+  dieState: Anim_Beez_Die
+  crossFadeDuration: 0.08
 --- !u!1 &6926839794863368101
 GameObject:
   m_ObjectHideFlags: 0
