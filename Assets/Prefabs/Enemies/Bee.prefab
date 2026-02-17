@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 1205896626021827534}
   - component: {fileID: 1824092324133649063}
   - component: {fileID: 3954790861117084392}
+  - component: {fileID: 5132698771204450011}
+  - component: {fileID: 5132698771204450012}
   m_Layer: 0
   m_Name: Bee
   m_TagString: Untagged
@@ -46,8 +48,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4c7647d5218e4dcb90cde9704df3229a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   maxHealth: 3
 --- !u!114 &1205896626021827534
 MonoBehaviour:
@@ -59,8 +61,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7bcd2029fa2f46f3bbda6118e7af1459, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!135 &1824092324133649063
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -92,9 +94,41 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc4a99c3a8c7427eb36b988f22117b6b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   health: {fileID: 4469040851536800705}
+--- !u!114 &5132698771204450011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1358921057130329688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aec8ded5f8074a9f8c7683576f30661f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  animator: {fileID: 0}
+  moveSpeedParam: MoveSpeed
+  attackTriggerParam: Attack
+  damageTriggerParam: Damage
+  dieTriggerParam: Die
+  attackSpeedMultiplierParam: AttackSpeedMultiplier
+--- !u!114 &5132698771204450012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1358921057130329688}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6251070eac7f4bec8129e169f793bf46, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  health: {fileID: 4469040851536800705}
+  animationDriver: {fileID: 5132698771204450011}
 --- !u!1 &6926839794863368101
 GameObject:
   m_ObjectHideFlags: 0

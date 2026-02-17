@@ -34,7 +34,7 @@ namespace Madbox.Hero
         [SerializeField] private JoystickInput inputSource;
         [SerializeField] private HeroMovement movement;
         [SerializeField] private HeroRotation rotation;
-        [SerializeField] private HeroAnimationDriver animationDriver;
+        [SerializeField] private CharacterAnimationDriver animationDriver;
 
         [Header("Tuning")]
         [SerializeField, Range(0f, 1f)] private float moveDeadzone = 0.05f;
