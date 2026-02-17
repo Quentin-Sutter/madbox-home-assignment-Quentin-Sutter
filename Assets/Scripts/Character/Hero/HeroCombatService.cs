@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Madbox.Character
@@ -9,11 +10,12 @@ namespace Madbox.Character
     [DisallowMultipleComponent]
     public sealed class HeroCombatService : MonoBehaviour, IHeroCombatService
     {
-        [SerializeField, Min(0.05f)] private float attackCooldownSeconds = 0.75f;
         [SerializeField, Min(1)] private int attackDamage = 1;
         [SerializeField] private CharacterAnimationDriver animationDriver;
-        [SerializeField, Min(0.1f)] private float defaultAttackAnimationSpeedMultiplier = 1f;
+        [SerializeField, Min(0.05f)] private float defaultAttackCooldownSeconds = 0.75f;
         [SerializeField, Min(0f)] private float defaultDamageDelaySeconds = 0.1f;
+
+        public event Action<float> OnAttackCooldownStarted;
 
         private Transform _currentTarget;
         private float _nextAttackTime;
@@ -76,25 +78,29 @@ namespace Madbox.Character
 
         private void PerformAttack()
         {
-            float attackSpeedMultiplier = GetAttackSpeedMultiplier();
-            float adjustedCooldown = attackCooldownSeconds / attackSpeedMultiplier;
-            _nextAttackTime = Time.time + adjustedCooldown;
+            float cooldown = GetAttackCooldownSeconds();
+            _nextAttackTime = Time.time + cooldown;
 
-            animationDriver?.TriggerAttack(attackSpeedMultiplier);
+            float animationSpeed = animationDriver != null
+                ? animationDriver.ComputeAttackSpeedForCooldown(cooldown)
+                : 1f;
 
-            float adjustedDamageDelay = GetDamageDelaySeconds() / attackSpeedMultiplier;
-            _damageApplyTime = Time.time + adjustedDamageDelay;
+            animationDriver?.TriggerAttack(animationSpeed);
+            OnAttackCooldownStarted?.Invoke(cooldown);
+
+            float damageDelay = GetDamageDelaySeconds();
+            _damageApplyTime = Time.time + damageDelay;
             _damagePending = true;
         }
 
-        private float GetAttackSpeedMultiplier()
+        private float GetAttackCooldownSeconds()
         {
             if (_currentWeapon == null)
             {
-                return Mathf.Max(0.1f, defaultAttackAnimationSpeedMultiplier);
+                return Mathf.Max(0.01f, defaultAttackCooldownSeconds);
             }
 
-            return Mathf.Max(0.1f, _currentWeapon.AttackAnimationSpeedMultiplier);
+            return Mathf.Max(0.01f, _currentWeapon.AttackCooldownSeconds);
         }
 
         private float GetDamageDelaySeconds()

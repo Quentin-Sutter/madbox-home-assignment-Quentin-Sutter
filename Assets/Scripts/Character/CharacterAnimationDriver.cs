@@ -10,6 +10,7 @@ namespace Madbox.Character
     public sealed class CharacterAnimationDriver : MonoBehaviour
     {
         [SerializeField] private Animator animator;
+        [SerializeField] private AnimationClip attackClip;
 
         [Header("Parameter Names")]
         [SerializeField] private string moveSpeedParam = "MoveSpeed";
@@ -30,6 +31,7 @@ namespace Madbox.Character
         private bool _hasDieTriggerParam;
         private bool _hasAttackSpeedMultiplierParam;
         private bool _hasDieTriggered;
+        private float _baseAttackLengthSeconds = 1f;
 
         private void Awake()
         {
@@ -42,6 +44,11 @@ namespace Madbox.Character
             {
                 Debug.LogWarning("CharacterAnimationDriver: Animator is not assigned and no Animator was found on this GameObject.", this);
                 return;
+            }
+
+            if (attackClip != null)
+            {
+                _baseAttackLengthSeconds = Mathf.Max(0.01f, attackClip.length);
             }
 
             CacheHashes();
@@ -58,14 +65,24 @@ namespace Madbox.Character
             animator.SetFloat(_moveSpeedHash, Mathf.Clamp01(normalized01));
         }
 
-        public void TriggerAttack(float attackSpeedMultiplier = 1f)
+        public float ComputeAttackSpeedForCooldown(float cooldownSeconds)
+        {
+            if (cooldownSeconds <= 0f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Max(0.01f, _baseAttackLengthSeconds / cooldownSeconds);
+        }
+
+        public void TriggerAttack(float attackSpeed = 1f)
         {
             if (_hasDieTriggered)
             {
                 return;
             }
 
-            SetAttackSpeedMultiplier(attackSpeedMultiplier);
+            SetAttackSpeedMultiplier(attackSpeed);
 
             if (_hasAttackTriggerParam)
             {

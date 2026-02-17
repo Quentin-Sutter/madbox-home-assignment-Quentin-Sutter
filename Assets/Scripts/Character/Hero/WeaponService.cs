@@ -24,13 +24,15 @@ namespace Madbox.Character
         [SerializeField] private HeroStateController heroStateController;
 
         public WeaponData CurrentWeapon { get; private set; }
+        public int CurrentWeaponIndex { get; private set; } = -1;
 
-        public event Action<WeaponData> OnWeaponChanged;
+        public event Action<WeaponData, int> OnWeaponChanged;
+        public event Action<float> OnSwitchCooldownStarted;
 
         private readonly Dictionary<WeaponData, GameObject> _visualInstancesByWeapon = new Dictionary<WeaponData, GameObject>();
         private readonly Dictionary<WeaponData, AsyncOperationHandle<GameObject>> _loadHandlesByWeapon = new Dictionary<WeaponData, AsyncOperationHandle<GameObject>>();
         private bool _weaponVisualVisible;
-
+        private float _nextSwitchTime;
 
         private async void Start()
         {
@@ -47,19 +49,8 @@ namespace Madbox.Character
             SyncWeaponVisualVisibilityWithState();
         }
 
-        int weaponNumber = 0;
-        float weaponTimer = 2.0f;
         private void Update()
         {
-            weaponTimer -= Time.deltaTime;
-
-            if (weaponTimer <= 0)
-            { 
-                EquipWeapon(weaponNumber++);
-                weaponTimer = 2.0f;
-                if (weaponNumber == 3) weaponNumber = -1;
-            }
-
             SyncWeaponVisualVisibilityWithState();
         }
 
@@ -77,6 +68,24 @@ namespace Madbox.Character
             _visualInstancesByWeapon.Clear();
         }
 
+        public bool RequestEquip(int index)
+        {
+            if (Time.time < _nextSwitchTime)
+            {
+                return false;
+            }
+
+            if (!EquipWeapon(index))
+            {
+                return false;
+            }
+
+            float duration = Mathf.Max(0f, CurrentWeapon != null ? CurrentWeapon.SwitchCooldownSeconds : 0f);
+            _nextSwitchTime = Time.time + duration;
+            OnSwitchCooldownStarted?.Invoke(duration);
+            return true;
+        }
+
         public bool EquipWeapon(int index)
         {
             if (weapons == null || index < 0 || index >= weapons.Length)
@@ -84,10 +93,29 @@ namespace Madbox.Character
                 return false;
             }
 
-            return EquipWeapon(weapons[index]);
+            return EquipWeapon(index, weapons[index]);
         }
 
         public bool EquipWeapon(WeaponData weapon)
+        {
+            if (weapon == null || weapons == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < weapons.Length; i++)
+            {
+                if (weapons[i] == weapon)
+                {
+                    return EquipWeapon(i, weapon);
+                }
+            }
+
+            Debug.LogWarning("WeaponService: Tried to equip weapon not present in configured list.", this);
+            return false;
+        }
+
+        private bool EquipWeapon(int index, WeaponData weapon)
         {
             if (weapon == null)
             {
@@ -96,9 +124,10 @@ namespace Madbox.Character
             }
 
             CurrentWeapon = weapon;
+            CurrentWeaponIndex = index;
             ApplyWeaponGameplayModifiers(weapon);
             SetActiveVisualForWeapon(weapon);
-            OnWeaponChanged?.Invoke(weapon);
+            OnWeaponChanged?.Invoke(weapon, index);
             return true;
         }
 
