@@ -52,7 +52,7 @@ namespace Madbox.Character
 
         public bool TryStartAttack(Transform target)
         {
-            if (!IsTargetValid(target) || Time.time < _nextAttackTime || _currentWeapon == null)
+            if (!IsTargetValid(target) || Time.time < _nextAttackTime)
             {
                 return false;
             }
