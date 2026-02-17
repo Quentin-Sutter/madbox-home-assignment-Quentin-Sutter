@@ -44,20 +44,17 @@ namespace Madbox.Character
             EquipWeapon(clampedDefaultIndex);
         }
 
+        int weaponNumber = 0;
+        float weaponTimer = 2.0f;
         private void Update()
         {
-            // Minimal keyboard shortcut for quick gameplay testing.
-            if (Input.GetKeyDown(KeyCode.Alpha1))
-            {
-                EquipWeapon(0);
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha2))
-            {
-                EquipWeapon(1);
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha3))
-            {
-                EquipWeapon(2);
+            weaponTimer -= Time.deltaTime;
+
+            if (weaponTimer <= 0)
+            { 
+                EquipWeapon(weaponNumber++);
+                weaponTimer = 2.0f;
+                if (weaponNumber == 3) weaponNumber = -1;
             }
         }
 
