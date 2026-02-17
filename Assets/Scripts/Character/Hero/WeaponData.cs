@@ -17,7 +17,9 @@ namespace Madbox.Character
         [SerializeField] private AssetReferenceGameObject visualPrefab;
 
         [Header("Gameplay")]
-        [SerializeField, Min(0.1f)] private float attackAnimationSpeedMultiplier = 1f;
+        [SerializeField, Min(0f)] private float switchCooldownSeconds = 0.2f;
+        [SerializeField, Min(0.05f)] private float attackCooldownSeconds = 0.75f;
+        [SerializeField, Min(0f)] private float ultimateCooldownSeconds = 3f;
         [SerializeField, Min(0.1f)] private float moveSpeedMultiplier = 1f;
         [SerializeField, Min(0.1f)] private float attackRange = 3f;
         [SerializeField, Min(0f)] private float damageDelaySeconds = 0.1f;
@@ -25,7 +27,9 @@ namespace Madbox.Character
         public string WeaponId => weaponId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? weaponId : displayName;
         public AssetReferenceGameObject VisualPrefab => visualPrefab;
-        public float AttackAnimationSpeedMultiplier => attackAnimationSpeedMultiplier;
+        public float SwitchCooldownSeconds => switchCooldownSeconds;
+        public float AttackCooldownSeconds => attackCooldownSeconds;
+        public float UltimateCooldownSeconds => ultimateCooldownSeconds;
         public float MoveSpeedMultiplier => moveSpeedMultiplier;
         public float AttackRange => attackRange;
         public float DamageDelaySeconds => damageDelaySeconds;
