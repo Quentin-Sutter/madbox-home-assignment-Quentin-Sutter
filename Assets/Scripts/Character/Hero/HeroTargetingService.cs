@@ -51,6 +51,17 @@ namespace Madbox.Character
             _lockedTarget = null;
         }
 
+        public void SetRange(float newRangeRadius)
+        {
+            rangeRadius = Mathf.Max(0.1f, newRangeRadius);
+            EnsureTriggerSetup();
+
+            if (_lockedTarget != null && !IsEnemyValidAndInRange(_lockedTarget))
+            {
+                _lockedTarget = null;
+            }
+        }
+
         private void OnTriggerEnter(Collider other)
         {
             EnemyTargetable enemy = ResolveEnemyTargetable(other);
