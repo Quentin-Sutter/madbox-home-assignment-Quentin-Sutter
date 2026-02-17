@@ -19,7 +19,9 @@ MonoBehaviour:
     m_SubObjectName: 
     m_SubObjectType: 
     m_EditorAssetChanged: 0
-  attackAnimationSpeedMultiplier: 0.5
+  switchCooldownSeconds: 4
+  attackCooldownSeconds: 2
+  ultimateCooldownSeconds: 30
   moveSpeedMultiplier: 0.75
   attackRange: 4
   damageDelaySeconds: 0.5
