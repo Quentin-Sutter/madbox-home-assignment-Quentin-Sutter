@@ -50,5 +50,11 @@ namespace Madbox.Character
                 OnDied?.Invoke();
             }
         }
+
+        public void ResetToMax()
+        {
+            CurrentHealth = maxHealth;
+            _hasDied = false;
+        }
     }
 }

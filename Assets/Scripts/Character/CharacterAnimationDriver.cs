@@ -93,6 +93,44 @@ namespace Madbox.Character
             animator.SetTrigger(_damageTriggerHash);
         }
 
+        public void ResetToIdle()
+        {
+            if (animator == null)
+            {
+                return;
+            }
+
+            _hasDieTriggered = false;
+
+            if (_hasMoveSpeedParam)
+            {
+                animator.SetFloat(_moveSpeedHash, 0f);
+            }
+
+            if (_hasAttackSpeedMultiplierParam)
+            {
+                animator.SetFloat(_attackSpeedMultiplierHash, 1f);
+            }
+
+            if (_hasAttackTriggerParam)
+            {
+                animator.ResetTrigger(_attackTriggerHash);
+            }
+
+            if (_hasDamageTriggerParam)
+            {
+                animator.ResetTrigger(_damageTriggerHash);
+            }
+
+            if (_hasDieTriggerParam)
+            {
+                animator.ResetTrigger(_dieTriggerHash);
+            }
+
+            animator.Rebind();
+            animator.Update(0f);
+        }
+
         public void TriggerDie()
         {
             if (_hasDieTriggered)
