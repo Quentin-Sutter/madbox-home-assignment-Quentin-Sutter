@@ -4,14 +4,14 @@ namespace Madbox.Hero
 {
     /// <summary>
     /// Owns combat timing and damage application.
-    /// Animation playback is delegated to HeroAnimationDriver.
+    /// Animation playback is delegated to CharacterAnimationDriver.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HeroCombatService : MonoBehaviour, IHeroCombatService
     {
         [SerializeField, Min(0.05f)] private float attackCooldownSeconds = 0.75f;
         [SerializeField, Min(1)] private int attackDamage = 1;
-        [SerializeField] private HeroAnimationDriver animationDriver;
+        [SerializeField] private CharacterAnimationDriver animationDriver;
         [SerializeField, Min(0f)] private float attackSpeedMultiplier = 1f;
         [SerializeField] private bool useAnimationEventForDamage;
 
