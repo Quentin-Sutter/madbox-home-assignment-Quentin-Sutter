@@ -106,8 +106,8 @@ namespace Madbox.Character
             _failedSpawnPositionWarningShown = false;
 
             enemy.transform.SetPositionAndRotation(spawnPosition, Quaternion.identity);
-            ResetPooledEnemy(enemy);
             enemy.SetActive(true);
+            ResetPooledEnemy(enemy);
         }
 
         private GameObject GetFirstInactiveEnemy()
