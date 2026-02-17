@@ -21,6 +21,7 @@ namespace Madbox.Character
         [SerializeField] private HeroMovement heroMovement;
         [SerializeField] private HeroTargetingService heroTargetingService;
         [SerializeField] private HeroCombatService heroCombatService;
+        [SerializeField] private HeroStateController heroStateController;
 
         public WeaponData CurrentWeapon { get; private set; }
 
@@ -28,6 +29,7 @@ namespace Madbox.Character
 
         private readonly Dictionary<WeaponData, GameObject> _visualInstancesByWeapon = new Dictionary<WeaponData, GameObject>();
         private readonly Dictionary<WeaponData, AsyncOperationHandle<GameObject>> _loadHandlesByWeapon = new Dictionary<WeaponData, AsyncOperationHandle<GameObject>>();
+        private bool _weaponVisualVisible;
 
 
         private async void Start()
@@ -42,6 +44,7 @@ namespace Madbox.Character
 
             int clampedDefaultIndex = Mathf.Clamp(defaultWeaponIndex, 0, weapons.Length - 1);
             EquipWeapon(clampedDefaultIndex);
+            SyncWeaponVisualVisibilityWithState();
         }
 
         int weaponNumber = 0;
@@ -56,6 +59,8 @@ namespace Madbox.Character
                 weaponTimer = 2.0f;
                 if (weaponNumber == 3) weaponNumber = -1;
             }
+
+            SyncWeaponVisualVisibilityWithState();
         }
 
         private void OnDestroy()
@@ -158,9 +163,20 @@ namespace Madbox.Character
                 {
                     continue;
                 }
-
-                pair.Value.SetActive(pair.Key == activeWeapon);
+                pair.Value.SetActive(_weaponVisualVisible && pair.Key == activeWeapon);
             }
+        }
+
+        private void SyncWeaponVisualVisibilityWithState()
+        {
+            bool shouldShowVisual = heroStateController != null && heroStateController.CurrentState == HeroState.Attack;
+            if (_weaponVisualVisible == shouldShowVisual)
+            {
+                return;
+            }
+
+            _weaponVisualVisible = shouldShowVisual;
+            SetActiveVisualForWeapon(CurrentWeapon);
         }
 
         private void AutoAssignReferences()
@@ -178,6 +194,11 @@ namespace Madbox.Character
             if (heroCombatService == null)
             {
                 heroCombatService = GetComponent<HeroCombatService>();
+            }
+
+            if (heroStateController == null)
+            {
+                heroStateController = GetComponent<HeroStateController>();
             }
         }
     }
