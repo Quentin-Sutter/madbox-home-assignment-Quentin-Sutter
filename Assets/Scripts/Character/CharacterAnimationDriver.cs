@@ -127,6 +127,11 @@ namespace Madbox.Character
                 animator.ResetTrigger(_dieTriggerHash);
             }
 
+            if (!animator.isActiveAndEnabled)
+            {
+                return;
+            }
+
             animator.Rebind();
             animator.Update(0f);
         }
