@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     /// <summary>
     /// For non-hero actors: forwards Health events to CharacterAnimationDriver.

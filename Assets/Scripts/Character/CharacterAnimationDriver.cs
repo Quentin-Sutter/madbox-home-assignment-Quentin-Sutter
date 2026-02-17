@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     /// <summary>
     /// Generic adapter between gameplay events and Animator parameters.

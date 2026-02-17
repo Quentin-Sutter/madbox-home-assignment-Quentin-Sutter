@@ -1,15 +1,14 @@
 using UnityEngine;
 
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     /// <summary>
-    /// Optional observer used to validate damage events while tuning combat.
+    /// Simple death reaction that disables the object when Health reaches zero.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DamageDebugLogger : MonoBehaviour
+    public sealed class DisableOnDeath : MonoBehaviour
     {
         [SerializeField] private Health health;
-        [SerializeField] private bool enableLogs = true;
 
         private void Awake()
         {
@@ -28,7 +27,7 @@ namespace Madbox.Hero
         {
             if (health != null)
             {
-                health.OnDamaged += HandleDamaged;
+                health.OnDied += HandleDied;
             }
         }
 
@@ -36,18 +35,13 @@ namespace Madbox.Hero
         {
             if (health != null)
             {
-                health.OnDamaged -= HandleDamaged;
+                health.OnDied -= HandleDied;
             }
         }
 
-        private void HandleDamaged(int amountApplied, int newHealth)
+        private void HandleDied()
         {
-            if (!enableLogs)
-            {
-                return;
-            }
-
-            Debug.Log($"{name} took {amountApplied} damage. Remaining health: {newHealth}.", this);
+            gameObject.SetActive(false);
         }
     }
 }

@@ -2,7 +2,7 @@ using Madbox.Input;
 using Madbox.Movement;
 using UnityEngine;
 
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     public interface IHeroTargetingService
     {

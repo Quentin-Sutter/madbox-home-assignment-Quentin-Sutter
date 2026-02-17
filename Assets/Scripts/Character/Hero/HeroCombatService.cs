@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     /// <summary>
     /// Owns combat timing and damage application.

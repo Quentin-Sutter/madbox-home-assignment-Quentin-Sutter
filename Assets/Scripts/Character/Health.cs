@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     /// <summary>
     /// Generic health for any actor. It only owns HP math and emits events for reactions.

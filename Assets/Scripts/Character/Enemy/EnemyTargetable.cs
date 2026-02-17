@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     /// <summary>
     /// Marker component used by hero targeting to identify enemy roots.

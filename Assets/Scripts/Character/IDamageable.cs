@@ -1,4 +1,4 @@
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     /// <summary>
     /// Tiny damage contract so combat can hit anything, not only enemies.

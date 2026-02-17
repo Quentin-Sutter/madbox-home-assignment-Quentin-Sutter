@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Madbox.Hero
+namespace Madbox.Character
 {
     /// <summary>
     /// Executes smooth horizontal rotation towards a direction or target.
