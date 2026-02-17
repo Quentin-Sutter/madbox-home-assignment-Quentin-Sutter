@@ -14,6 +14,7 @@ namespace Madbox.Movement
 
         private CharacterController _characterController;
         private bool _controllerWarningShown;
+        private float _speedMultiplier = 1f;
 
         private void Awake()
         {
@@ -41,7 +42,7 @@ namespace Madbox.Movement
             }
 
             IsMoving = clampedStrength > 0f;
-            Vector3 velocity = planarDirection * (baseMoveSpeed * clampedStrength);
+            Vector3 velocity = planarDirection * (baseMoveSpeed * _speedMultiplier * clampedStrength);
             Vector3 displacement = velocity * Time.deltaTime;
 
             if (_characterController != null)
@@ -51,6 +52,12 @@ namespace Madbox.Movement
             }
 
             transform.position += displacement;
+        }
+
+
+        public void SetSpeedMultiplier(float multiplier)
+        {
+            _speedMultiplier = Mathf.Max(0f, multiplier);
         }
 
         public void Stop()

@@ -12,16 +12,26 @@ namespace Madbox.Character
         [SerializeField, Min(0.05f)] private float attackCooldownSeconds = 0.75f;
         [SerializeField, Min(1)] private int attackDamage = 1;
         [SerializeField] private CharacterAnimationDriver animationDriver;
-        [SerializeField, Min(0f)] private float attackSpeedMultiplier = 1f;
-        [SerializeField] private bool useAnimationEventForDamage;
+        [SerializeField, Min(0.1f)] private float defaultAttackAnimationSpeedMultiplier = 1f;
+        [SerializeField, Min(0f)] private float defaultDamageDelaySeconds = 0.1f;
 
         private Transform _currentTarget;
         private float _nextAttackTime;
         private bool _isAttacking;
+
         private bool _damagePending;
+        private float _damageApplyTime;
+
+        private WeaponData _currentWeapon;
 
         private void Update()
         {
+            if (_damagePending && Time.time >= _damageApplyTime)
+            {
+                ApplyDamage(_currentTarget);
+                _damagePending = false;
+            }
+
             if (!_isAttacking)
             {
                 return;
@@ -59,32 +69,42 @@ namespace Madbox.Character
             _damagePending = false;
         }
 
-        /// <summary>
-        /// Optional animation event callback: call this from the attack clip to apply damage.
-        /// </summary>
-        public void AnimationEvent_DealDamage()
+        public void SetWeapon(WeaponData weapon)
         {
-            if (!_isAttacking || !_damagePending || !IsTargetValid(_currentTarget))
-            {
-                return;
-            }
-
-            ApplyDamage(_currentTarget);
-            _damagePending = false;
+            _currentWeapon = weapon;
         }
 
         private void PerformAttack()
         {
-            _nextAttackTime = Time.time + attackCooldownSeconds;
+            float attackSpeedMultiplier = GetAttackSpeedMultiplier();
+            float adjustedCooldown = attackCooldownSeconds / attackSpeedMultiplier;
+            _nextAttackTime = Time.time + adjustedCooldown;
+
             animationDriver?.TriggerAttack(attackSpeedMultiplier);
 
-            if (useAnimationEventForDamage)
+            float adjustedDamageDelay = GetDamageDelaySeconds() / attackSpeedMultiplier;
+            _damageApplyTime = Time.time + adjustedDamageDelay;
+            _damagePending = true;
+        }
+
+        private float GetAttackSpeedMultiplier()
+        {
+            if (_currentWeapon == null)
             {
-                _damagePending = true;
-                return;
+                return Mathf.Max(0.1f, defaultAttackAnimationSpeedMultiplier);
             }
 
-            ApplyDamage(_currentTarget);
+            return Mathf.Max(0.1f, _currentWeapon.AttackAnimationSpeedMultiplier);
+        }
+
+        private float GetDamageDelaySeconds()
+        {
+            if (_currentWeapon == null)
+            {
+                return Mathf.Max(0f, defaultDamageDelaySeconds);
+            }
+
+            return Mathf.Max(0f, _currentWeapon.DamageDelaySeconds);
         }
 
         private void ApplyDamage(Transform target)
