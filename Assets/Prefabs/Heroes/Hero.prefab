@@ -503,7 +503,7 @@ GameObject:
   - component: {fileID: 2068988218439180230}
   m_Layer: 0
   m_Name: Hero
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -740,6 +740,7 @@ MonoBehaviour:
   heroMovement: {fileID: 670278145510243874}
   heroTargetingService: {fileID: 5640136942777245500}
   heroCombatService: {fileID: 6432174883311883689}
+  heroStateController: {fileID: 0}
 --- !u!1 &3512741108777884559
 GameObject:
   m_ObjectHideFlags: 0

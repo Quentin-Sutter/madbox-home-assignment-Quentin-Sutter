@@ -21,5 +21,5 @@ MonoBehaviour:
     m_EditorAssetChanged: 0
   attackAnimationSpeedMultiplier: 1
   moveSpeedMultiplier: 1
-  attackRange: 2
+  attackRange: 3
   damageDelaySeconds: 0.25
