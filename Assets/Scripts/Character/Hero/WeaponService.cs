@@ -70,6 +70,11 @@ namespace Madbox.Character
 
         public bool RequestEquip(int index)
         {
+            if (index == CurrentWeaponIndex)
+            {
+                return false;
+            }
+
             if (Time.time < _nextSwitchTime)
             {
                 return false;
