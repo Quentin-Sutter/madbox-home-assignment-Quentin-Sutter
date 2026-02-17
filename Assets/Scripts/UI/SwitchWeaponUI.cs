@@ -133,6 +133,7 @@ namespace Madbox.UI
         private void HandleSwitchCooldownStarted(float duration)
         {
             _switchCooldownEndTime = Time.time + Mathf.Max(0f, duration);
+            StartCooldownForIndex(_currentWeaponIndex, duration);
             _wasSwitchCooldownActive = IsSwitchCooldownActive;
             RefreshButtonsState();
         }
