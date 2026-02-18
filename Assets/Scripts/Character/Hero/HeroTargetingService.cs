@@ -93,10 +93,7 @@ namespace Madbox.Character
                 SubscribeToEnemyDeath(enemy);
             }
 
-            if (!IsEnemyValidAndInRange(_lockedTarget))
-            {
-                RefreshTarget();
-            }
+            RefreshTarget();
         }
 
         private void OnTriggerExit(Collider other)
@@ -112,6 +109,8 @@ namespace Madbox.Character
             {
                 _lockedTarget = null;
             }
+
+            RefreshTarget();
         }
 
         private EnemyTargetable FindClosestEnemy()
