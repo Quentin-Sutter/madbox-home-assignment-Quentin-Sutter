@@ -111,7 +111,7 @@ namespace Madbox.Character
                     break;
 
                 case HeroState.Idle:
-                    movement.Stop();
+                    StopMovement();
                     _attackTarget = null;
                     break;
             }
@@ -121,7 +121,7 @@ namespace Madbox.Character
         {
             if (state == HeroState.Move)
             {
-                movement.Stop();
+                StopMovement();
             }
 
             if (state == HeroState.Attack)
@@ -135,24 +135,29 @@ namespace Madbox.Character
             switch (_currentState)
             {
                 case HeroState.Move:
-                    movement.Move(intent.WorldDirection, intent.Strength);
-                    rotation.FaceDirection(intent.WorldDirection);
-                    animationDriver?.SetMoveAmount(intent.Strength);
+                    TickMoveIntent(intent);
                     break;
 
                 case HeroState.Attack:
-                    animationDriver?.SetMoveAmount(0f);
-                    TickAttackState();
+                    SetIdleAnimation();
+                    TickAttackIntent();
                     break;
 
                 case HeroState.Idle:
-                    animationDriver?.SetMoveAmount(0f);
-                    TickIdleState();
+                    SetIdleAnimation();
+                    TickIdleIntent();
                     break;
             }
         }
 
-        private void TickAttackState()
+        private void TickMoveIntent(MoveIntent intent)
+        {
+            movement.Move(intent.WorldDirection, intent.Strength);
+            rotation.FaceDirection(intent.WorldDirection);
+            animationDriver?.SetMoveAmount(intent.Strength);
+        }
+
+        private void TickAttackIntent()
         {
             Transform lockedTarget = _combatService != null ? _combatService.CurrentLockedTarget : null;
 
@@ -169,9 +174,9 @@ namespace Madbox.Character
             }
         }
 
-        private void TickIdleState()
+        private void TickIdleIntent()
         {
-            movement.Stop();
+            StopMovement();
 
             if (_targetingService == null || !_targetingService.HasValidTarget())
             {
@@ -180,6 +185,16 @@ namespace Madbox.Character
 
             Transform target = _targetingService.GetCurrentTarget();
             rotation.FaceTarget(target);
+        }
+
+        private void StopMovement()
+        {
+            movement.Stop();
+        }
+
+        private void SetIdleAnimation()
+        {
+            animationDriver?.SetMoveAmount(0f);
         }
 
         private void AcquireAttackTarget()
