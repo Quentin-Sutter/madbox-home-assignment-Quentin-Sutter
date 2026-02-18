@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -33,20 +34,55 @@ namespace Madbox.Character
         private readonly Dictionary<WeaponData, AsyncOperationHandle<GameObject>> _loadHandlesByWeapon = new Dictionary<WeaponData, AsyncOperationHandle<GameObject>>();
         private bool _weaponVisualVisible;
         private float _nextSwitchTime;
+        private CancellationTokenSource _lifetimeCancellationSource;
+        private bool _isDisposed;
+        private bool _isInitialized;
+        private bool _isInitializing;
+
+        private void Awake()
+        {
+            _lifetimeCancellationSource = new CancellationTokenSource();
+        }
 
         private async void Start()
         {
+            await InitializeAsync();
+        }
+
+        private async System.Threading.Tasks.Task InitializeAsync()
+        {
+            if (_isDisposed || _isInitialized || _isInitializing)
+            {
+                return;
+            }
+
+            _isInitializing = true;
             AutoAssignReferences();
-            await PreloadVisualsAsync();
+
+            try
+            {
+                await PreloadVisualsAsync(_lifetimeCancellationSource.Token);
+            }
+            finally
+            {
+                _isInitializing = false;
+            }
+
+            if (ShouldAbortPostAwaitWork())
+            {
+                return;
+            }
 
             if (weapons == null || weapons.Length == 0)
             {
+                _isInitialized = true;
                 return;
             }
 
             int clampedDefaultIndex = Mathf.Clamp(defaultWeaponIndex, 0, weapons.Length - 1);
             EquipWeapon(clampedDefaultIndex);
             SyncWeaponVisualVisibilityWithState();
+            _isInitialized = true;
         }
 
         private void OnEnable()
@@ -60,6 +96,11 @@ namespace Madbox.Character
             {
                 heroStateController.OnStateChanged += HandleHeroStateChanged;
             }
+
+            if (!_isInitialized)
+            {
+                _ = InitializeAsync();
+            }
         }
 
         private void OnDisable()
@@ -72,6 +113,9 @@ namespace Madbox.Character
 
         private void OnDestroy()
         {
+            _isDisposed = true;
+            _lifetimeCancellationSource?.Cancel();
+
             foreach (KeyValuePair<WeaponData, AsyncOperationHandle<GameObject>> handlePair in _loadHandlesByWeapon)
             {
                 if (handlePair.Value.IsValid())
@@ -82,6 +126,8 @@ namespace Madbox.Character
 
             _loadHandlesByWeapon.Clear();
             _visualInstancesByWeapon.Clear();
+            _lifetimeCancellationSource?.Dispose();
+            _lifetimeCancellationSource = null;
         }
 
         public bool RequestEquip(int index)
@@ -152,7 +198,7 @@ namespace Madbox.Character
             return true;
         }
 
-        private async System.Threading.Tasks.Task PreloadVisualsAsync()
+        private async System.Threading.Tasks.Task PreloadVisualsAsync(CancellationToken cancellationToken)
         {
             if (weapons == null || weapons.Length == 0)
             {
@@ -161,6 +207,11 @@ namespace Madbox.Character
 
             for (int i = 0; i < weapons.Length; i++)
             {
+                if (cancellationToken.IsCancellationRequested || ShouldAbortPostAwaitWork())
+                {
+                    return;
+                }
+
                 WeaponData weapon = weapons[i];
                 if (weapon == null || _visualInstancesByWeapon.ContainsKey(weapon))
                 {
@@ -180,6 +231,11 @@ namespace Madbox.Character
                 try
                 {
                     GameObject prefab = await loadHandle.Task;
+                    if (cancellationToken.IsCancellationRequested || ShouldAbortPostAwaitWork())
+                    {
+                        return;
+                    }
+
                     if (prefab == null)
                     {
                         Debug.LogError($"WeaponService: Loaded prefab is null for weapon '{weapon.name}'.", this);
@@ -193,9 +249,19 @@ namespace Madbox.Character
                 }
                 catch (Exception exception)
                 {
+                    if (cancellationToken.IsCancellationRequested || _isDisposed)
+                    {
+                        return;
+                    }
+
                     Debug.LogError($"WeaponService: Failed to load weapon '{weapon.name}'. {exception.Message}", this);
                 }
             }
+        }
+
+        private bool ShouldAbortPostAwaitWork()
+        {
+            return _isDisposed || !this || !gameObject || !isActiveAndEnabled;
         }
 
         private void ApplyWeaponGameplayModifiers(WeaponData weapon)
