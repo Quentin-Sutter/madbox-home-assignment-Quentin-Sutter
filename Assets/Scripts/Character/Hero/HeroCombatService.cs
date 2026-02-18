@@ -8,11 +8,11 @@ namespace Madbox.Character
     /// Animation playback is delegated to CharacterAnimationDriver.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HeroCombatService : MonoBehaviour, IHeroCombatService, IWeaponReceiver
+    public sealed class HeroCombatService : MonoBehaviour
     {
         [SerializeField, Min(1)] private int attackDamage = 1;
         [SerializeField] private CharacterAnimationDriver animationDriver;
-        [SerializeField] private MonoBehaviour targetingServiceSource;
+        [SerializeField] private HeroTargetingService targetingService;
 
         public event Action<float> OnAttackCooldownStarted;
 
@@ -28,14 +28,15 @@ namespace Madbox.Character
         private int _pendingDamageVersion;
 
         private WeaponData _currentWeapon;
-        private IHeroTargetingService _targetingService;
 
         private bool _attackInProgress;
         private float _attackEndTime;
 
+        private bool _targetingWarningShown;
+
         private void Awake()
         {
-            _targetingService = targetingServiceSource as IHeroTargetingService;
+            AutoAssignReferences();
         }
 
         private void Update()
@@ -83,7 +84,7 @@ namespace Madbox.Character
 
             if (!IsTargetValid(target))
             {
-                target = _targetingService != null ? _targetingService.GetCurrentTarget() : null;
+                target = targetingService != null ? targetingService.GetCurrentTarget() : null;
             }
 
             if (!IsTargetValid(target) || Time.time < _nextAttackTime)
@@ -173,14 +174,28 @@ namespace Madbox.Character
 
         private void TryReacquireTarget()
         {
-            if (_targetingService == null)
+            if (targetingService == null)
             {
+                if (!_targetingWarningShown)
+                {
+                    Debug.LogWarning("HeroCombatService: targetingService is not assigned.", this);
+                    _targetingWarningShown = true;
+                }
+
                 _currentTarget = null;
                 return;
             }
 
-            Transform nextTarget = _targetingService.GetCurrentTarget();
+            Transform nextTarget = targetingService.GetCurrentTarget();
             _currentTarget = IsTargetValid(nextTarget) ? nextTarget : null;
+        }
+
+        private void AutoAssignReferences()
+        {
+            if (targetingService == null)
+            {
+                targetingService = GetComponent<HeroTargetingService>();
+            }
         }
 
         private static bool IsTargetValid(Transform target)

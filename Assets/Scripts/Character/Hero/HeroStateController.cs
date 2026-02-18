@@ -27,26 +27,24 @@ namespace Madbox.Character
         [SerializeField, Range(0f, 1f)] private float moveDeadzone = 0.05f;
 
         [Header("Future Hooks")]
-        [SerializeField] private MonoBehaviour targetingServiceSource;
-        [SerializeField] private MonoBehaviour combatServiceSource;
+        [SerializeField] private HeroTargetingService targetingService;
+        [SerializeField] private HeroCombatService combatService;
 
         public HeroState CurrentState => _currentState;
         public event System.Action<HeroState> OnStateChanged;
 
         private HeroState _currentState = HeroState.Idle;
         private Transform _attackTarget;
-        private IHeroTargetingService _targetingService;
-        private IHeroCombatService _combatService;
-
         private bool _inputWarningShown;
         private bool _movementWarningShown;
         private bool _rotationWarningShown;
+        private bool _targetingWarningShown;
+        private bool _combatWarningShown;
         private bool _wasMovingLastFrame;
 
         private void Awake()
         {
-            _targetingService = targetingServiceSource as IHeroTargetingService;
-            _combatService = combatServiceSource as IHeroCombatService;
+            AutoAssignReferences();
         }
 
         private void Update()
@@ -61,7 +59,7 @@ namespace Madbox.Character
 
             if (_wasMovingLastFrame && !isMovingNow)
             {
-                _targetingService?.RefreshTarget();
+                targetingService?.RefreshTarget();
             }
 
             HeroState desiredState = EvaluateDesiredState(intent);
@@ -83,7 +81,7 @@ namespace Madbox.Character
                 return HeroState.Move;
             }
 
-            bool hasTarget = _targetingService != null && _targetingService.HasValidTarget();
+            bool hasTarget = targetingService != null && targetingService.HasValidTarget();
             return hasTarget ? HeroState.Attack : HeroState.Idle;
         }
 
@@ -100,8 +98,8 @@ namespace Madbox.Character
             switch (state)
             {
                 case HeroState.Move:
-                    _combatService?.CancelAttack();
-                    _targetingService?.BreakLock();
+                    combatService?.CancelAttack();
+                    targetingService?.BreakLock();
                     _attackTarget = null;
                     break;
 
@@ -126,7 +124,7 @@ namespace Madbox.Character
 
             if (state == HeroState.Attack)
             {
-                _combatService?.CancelAttack();
+                combatService?.CancelAttack();
             }
         }
 
@@ -159,13 +157,13 @@ namespace Madbox.Character
 
         private void TickAttackIntent()
         {
-            Transform lockedTarget = _combatService != null ? _combatService.CurrentLockedTarget : null;
+            Transform lockedTarget = combatService != null ? combatService.CurrentLockedTarget : null;
 
-            if (!IsTargetValid(lockedTarget) && (_combatService == null || !_combatService.IsAttackInProgress))
+            if (!IsTargetValid(lockedTarget) && (combatService == null || !combatService.IsAttackInProgress))
             {
                 AcquireAttackTarget();
                 TryStartAttackOnCurrentTarget();
-                lockedTarget = _combatService != null ? _combatService.CurrentLockedTarget : _attackTarget;
+                lockedTarget = combatService != null ? combatService.CurrentLockedTarget : _attackTarget;
             }
 
             if (lockedTarget != null)
@@ -178,12 +176,12 @@ namespace Madbox.Character
         {
             StopMovement();
 
-            if (_targetingService == null || !_targetingService.HasValidTarget())
+            if (targetingService == null || !targetingService.HasValidTarget())
             {
                 return;
             }
 
-            Transform target = _targetingService.GetCurrentTarget();
+            Transform target = targetingService.GetCurrentTarget();
             rotation.FaceTarget(target);
         }
 
@@ -199,17 +197,17 @@ namespace Madbox.Character
 
         private void AcquireAttackTarget()
         {
-            _attackTarget = _targetingService != null ? _targetingService.GetCurrentTarget() : null;
+            _attackTarget = targetingService != null ? targetingService.GetCurrentTarget() : null;
         }
 
         private void TryStartAttackOnCurrentTarget()
         {
-            if (_combatService == null || !IsTargetValid(_attackTarget))
+            if (combatService == null || !IsTargetValid(_attackTarget))
             {
                 return;
             }
 
-            _combatService.TryStartAttack(_attackTarget);
+            combatService.TryStartAttack(_attackTarget);
         }
 
         private static bool IsTargetValid(Transform target)
@@ -257,7 +255,38 @@ namespace Madbox.Character
                 return false;
             }
 
+            if (targetingService == null)
+            {
+                if (!_targetingWarningShown)
+                {
+                    Debug.LogWarning("HeroStateController: targetingService is not assigned.");
+                    _targetingWarningShown = true;
+                }
+            }
+
+            if (combatService == null)
+            {
+                if (!_combatWarningShown)
+                {
+                    Debug.LogWarning("HeroStateController: combatService is not assigned.");
+                    _combatWarningShown = true;
+                }
+            }
+
             return true;
+        }
+
+        private void AutoAssignReferences()
+        {
+            if (targetingService == null)
+            {
+                targetingService = GetComponent<HeroTargetingService>();
+            }
+
+            if (combatService == null)
+            {
+                combatService = GetComponent<HeroCombatService>();
+            }
         }
     }
 }
