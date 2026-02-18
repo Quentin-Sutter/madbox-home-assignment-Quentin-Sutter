@@ -30,27 +30,33 @@ namespace Madbox.UI
         private float _switchCooldownEndTime;
         private float _attackCooldownEndTime;
         private int _attackCooldownWeaponIndex = -1;
+        private bool _missingReferencesWarningShown;
 
         private bool IsSwitchCooldownActive => Time.time < _switchCooldownEndTime;
         private bool IsAttackCooldownActive => Time.time < _attackCooldownEndTime;
 
         private void Awake()
         {
-            if (weaponService == null)
-            {
-                weaponService = FindObjectOfType<WeaponService>();
-            }
+            WireButtons();
+            WarnIfReferencesMissing();
+        }
 
-            if (heroCombatService == null)
-            {
-                heroCombatService = FindObjectOfType<HeroCombatService>();
-            }
+        private void Reset()
+        {
+            AutoWireSerializedReferences();
+            WireButtons();
+        }
 
+        private void OnValidate()
+        {
+            AutoWireSerializedReferences();
             WireButtons();
         }
 
         private void OnEnable()
         {
+            WarnIfReferencesMissing();
+
             if (weaponService != null)
             {
                 weaponService.OnSwitchCooldownStarted += HandleSwitchCooldownStarted;
@@ -104,6 +110,56 @@ namespace Madbox.UI
                 binding.button.onClick.RemoveAllListeners();
                 binding.button.onClick.AddListener(() => OnWeaponClicked(weaponIndex));
             }
+        }
+
+        private void AutoWireSerializedReferences()
+        {
+            weaponService = weaponService != null ? weaponService : GetComponent<WeaponService>();
+            heroCombatService = heroCombatService != null ? heroCombatService : GetComponent<HeroCombatService>();
+
+            if (weaponButtons != null && weaponButtons.Length > 0)
+            {
+                return;
+            }
+
+            Button[] childButtons = GetComponentsInChildren<Button>(true);
+            if (childButtons == null || childButtons.Length == 0)
+            {
+                return;
+            }
+
+            weaponButtons = new WeaponButtonBinding[childButtons.Length];
+            for (int i = 0; i < childButtons.Length; i++)
+            {
+                Button button = childButtons[i];
+                weaponButtons[i] = new WeaponButtonBinding
+                {
+                    weaponIndex = i,
+                    button = button,
+                    cooldownView = button != null ? button.GetComponent<CooldownFillButton>() : null
+                };
+            }
+        }
+
+        private void WarnIfReferencesMissing()
+        {
+            if (_missingReferencesWarningShown)
+            {
+                return;
+            }
+
+            if (weaponService != null && heroCombatService != null)
+            {
+                return;
+            }
+
+            _missingReferencesWarningShown = true;
+            Debug.LogWarning(
+                $"{nameof(SwitchWeaponUI)} on '{name}' is missing serialized dependencies " +
+                $"(weaponService: {(weaponService == null ? "missing" : "ok")}, " +
+                $"heroCombatService: {(heroCombatService == null ? "missing" : "ok")}). " +
+                "Assign both references in the inspector. UI binding will be skipped for missing dependencies.",
+                this);
         }
 
         private void OnWeaponClicked(int weaponIndex)
