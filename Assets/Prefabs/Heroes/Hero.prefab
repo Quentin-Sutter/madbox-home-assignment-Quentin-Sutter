@@ -597,6 +597,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 4278100186079492270}
+  attackClip: {fileID: 7400000, guid: 8055cf7b50b7f1e4685a28e43661909d, type: 2}
   moveSpeedParam: MoveSpeed
   attackTriggerParam: Attack
   damageTriggerParam: Damage
@@ -648,11 +649,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 03f8338ff8564c549286b2b8a8402869, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackCooldownSeconds: 1.5
   attackDamage: 1
   animationDriver: {fileID: 3818201722713362545}
-  defaultAttackAnimationSpeedMultiplier: 1
-  defaultDamageDelaySeconds: 0.1
 --- !u!143 &2291742064611143131
 CharacterController:
   m_ObjectHideFlags: 0
