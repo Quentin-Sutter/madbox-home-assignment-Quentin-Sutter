@@ -13,13 +13,12 @@ namespace Madbox.Character
         [SerializeField, Min(0.1f)] private float rangeRadius = 3f;
 
         private readonly HashSet<EnemyTargetable> _inRangeEnemies = new HashSet<EnemyTargetable>();
-        private readonly Dictionary<EnemyTargetable, Health> _trackedEnemyHealth = new Dictionary<EnemyTargetable, Health>();
         private readonly List<EnemyTargetable> _cleanupBuffer = new List<EnemyTargetable>();
 
         private SphereCollider _rangeTrigger;
-        private EnemyTargetable _lockedTarget;
+        private Transform _lockedTargetTransform;
+        private EnemyTargetable _lockedTargetable;
         private bool _triggerWarningShown;
-        private bool _missingHealthWarningShown;
 
         private void Awake()
         {
@@ -30,11 +29,13 @@ namespace Madbox.Character
         private void OnDisable()
         {
             ClearTrackedEnemies();
+            UnsubscribeFromTargetInvalidation();
         }
 
         private void OnDestroy()
         {
             ClearTrackedEnemies();
+            UnsubscribeFromTargetInvalidation();
         }
 
         private void OnValidate()
@@ -44,13 +45,13 @@ namespace Madbox.Character
 
         public Transform GetCurrentTarget()
         {
-            if (IsEnemyValidAndInRange(_lockedTarget))
+            if (IsLockedTargetValid())
             {
-                return _lockedTarget.transform;
+                return _lockedTargetTransform;
             }
 
             RefreshTarget();
-            return _lockedTarget != null ? _lockedTarget.transform : null;
+            return _lockedTargetTransform;
         }
 
         public bool HasValidTarget()
@@ -60,13 +61,13 @@ namespace Madbox.Character
 
         public void BreakLock()
         {
-            _lockedTarget = null;
+            ClearLock();
         }
 
         public void RefreshTarget()
         {
             RebuildTrackedEnemiesIfNeeded();
-            _lockedTarget = FindClosestEnemy();
+            SetLockedTarget(FindClosestEnemy());
         }
 
         public void SetRange(float newRangeRadius)
@@ -74,25 +75,21 @@ namespace Madbox.Character
             rangeRadius = Mathf.Max(0.1f, newRangeRadius);
             EnsureTriggerSetup();
 
-            if (_lockedTarget != null && !IsEnemyValidAndInRange(_lockedTarget))
+            if (!IsLockedTargetValid())
             {
-                _lockedTarget = null;
+                ClearLock();
             }
         }
 
         private void OnTriggerEnter(Collider other)
         {
             EnemyTargetable enemy = ResolveEnemyTargetable(other);
-            if (enemy == null || !enemy.gameObject.activeInHierarchy)
+            if (!IsTargetValid(enemy))
             {
                 return;
             }
 
-            if (_inRangeEnemies.Add(enemy))
-            {
-                SubscribeToEnemyDeath(enemy);
-            }
-
+            _inRangeEnemies.Add(enemy);
             RefreshTarget();
         }
 
@@ -105,9 +102,9 @@ namespace Madbox.Character
             }
 
             RemoveTrackedEnemy(enemy);
-            if (_lockedTarget == enemy)
+            if (_lockedTargetable == enemy)
             {
-                _lockedTarget = null;
+                ClearLock();
             }
 
             RefreshTarget();
@@ -139,9 +136,14 @@ namespace Madbox.Character
             return closest;
         }
 
+        private bool IsLockedTargetValid()
+        {
+            return _lockedTargetable != null && IsEnemyValidAndInRange(_lockedTargetable) && _lockedTargetTransform != null;
+        }
+
         private bool IsEnemyValidAndInRange(EnemyTargetable enemy)
         {
-            if (enemy == null || !enemy.gameObject.activeInHierarchy || !IsEnemyAlive(enemy))
+            if (!IsTargetValid(enemy))
             {
                 return false;
             }
@@ -149,6 +151,16 @@ namespace Madbox.Character
             float sqrRange = rangeRadius * rangeRadius;
             float sqrDistance = (enemy.transform.position - transform.position).sqrMagnitude;
             return sqrDistance <= sqrRange;
+        }
+
+        private static bool IsTargetValid(EnemyTargetable enemy)
+        {
+            if (enemy == null)
+            {
+                return false;
+            }
+
+            return enemy.IsTargetable;
         }
 
         private void RebuildTrackedEnemiesIfNeeded()
@@ -162,7 +174,7 @@ namespace Madbox.Character
 
             foreach (EnemyTargetable enemy in _inRangeEnemies)
             {
-                if (IsInvalidEnemy(enemy) || !IsEnemyAlive(enemy))
+                if (!IsTargetValid(enemy))
                 {
                     _cleanupBuffer.Add(enemy);
                 }
@@ -176,49 +188,6 @@ namespace Madbox.Character
             _cleanupBuffer.Clear();
         }
 
-        private static bool IsInvalidEnemy(EnemyTargetable enemy)
-        {
-            return enemy == null || !enemy.gameObject.activeInHierarchy;
-        }
-
-        private bool IsEnemyAlive(EnemyTargetable enemy)
-        {
-            if (enemy == null)
-            {
-                return false;
-            }
-
-            if (_trackedEnemyHealth.TryGetValue(enemy, out Health health) && health != null)
-            {
-                return health.IsAlive;
-            }
-
-            return true;
-        }
-
-        private void SubscribeToEnemyDeath(EnemyTargetable enemy)
-        {
-            if (enemy == null || _trackedEnemyHealth.ContainsKey(enemy))
-            {
-                return;
-            }
-
-            Health enemyHealth = enemy.GetComponentInParent<Health>();
-            if (enemyHealth == null)
-            {
-                if (!_missingHealthWarningShown)
-                {
-                    Debug.LogWarning("HeroTargetingService: EnemyTargetable has no Health in self/parents.", this);
-                    _missingHealthWarningShown = true;
-                }
-
-                return;
-            }
-
-            enemyHealth.OnDied += OnTrackedEnemyDied;
-            _trackedEnemyHealth.Add(enemy, enemyHealth);
-        }
-
         private void RemoveTrackedEnemy(EnemyTargetable enemy)
         {
             if (enemy == null)
@@ -226,37 +195,63 @@ namespace Madbox.Character
                 return;
             }
 
-            if (_trackedEnemyHealth.TryGetValue(enemy, out Health health) && health != null)
-            {
-                health.OnDied -= OnTrackedEnemyDied;
-            }
-
-            _trackedEnemyHealth.Remove(enemy);
             _inRangeEnemies.Remove(enemy);
         }
 
         private void ClearTrackedEnemies()
         {
-            if (_trackedEnemyHealth.Count > 0)
-            {
-                foreach (KeyValuePair<EnemyTargetable, Health> pair in _trackedEnemyHealth)
-                {
-                    if (pair.Value != null)
-                    {
-                        pair.Value.OnDied -= OnTrackedEnemyDied;
-                    }
-                }
-
-                _trackedEnemyHealth.Clear();
-            }
-
             _inRangeEnemies.Clear();
-            _lockedTarget = null;
+            ClearLock();
         }
 
-        private void OnTrackedEnemyDied()
+        private void SetLockedTarget(EnemyTargetable nextTarget)
         {
+            if (_lockedTargetable == nextTarget)
+            {
+                _lockedTargetTransform = nextTarget != null ? nextTarget.transform : null;
+                return;
+            }
+
+            UnsubscribeFromTargetInvalidation();
+
+            _lockedTargetable = nextTarget;
+            _lockedTargetTransform = nextTarget != null ? nextTarget.transform : null;
+
+            SubscribeToTargetInvalidation();
+        }
+
+        private void SubscribeToTargetInvalidation()
+        {
+            if (_lockedTargetable == null)
+            {
+                return;
+            }
+
+            _lockedTargetable.OnInvalidated += HandleLockedTargetInvalidated;
+        }
+
+        private void UnsubscribeFromTargetInvalidation()
+        {
+            if (_lockedTargetable == null)
+            {
+                return;
+            }
+
+            _lockedTargetable.OnInvalidated -= HandleLockedTargetInvalidated;
+        }
+
+        private void HandleLockedTargetInvalidated()
+        {
+            RemoveTrackedEnemy(_lockedTargetable);
+            ClearLock();
             RefreshTarget();
+        }
+
+        private void ClearLock()
+        {
+            UnsubscribeFromTargetInvalidation();
+            _lockedTargetable = null;
+            _lockedTargetTransform = null;
         }
 
         private EnemyTargetable ResolveEnemyTargetable(Collider other)

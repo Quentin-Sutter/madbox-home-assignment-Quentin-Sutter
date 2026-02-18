@@ -4,12 +4,11 @@ using UnityEngine;
 namespace Madbox.Character
 {
     /// <summary>
-    /// Owns combat timing and damage application.
-    /// Animation playback is delegated to CharacterAnimationDriver.
+    /// Handles attack cadence and damage application. Visual state is delegated to CharacterAnimationDriver.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HeroCombatService : MonoBehaviour
-    { 
+    {
         [SerializeField] private CharacterAnimationDriver animationDriver;
         [SerializeField] private HeroTargetingService targetingService;
 
@@ -40,6 +39,8 @@ namespace Madbox.Character
 
         private void Update()
         {
+            _currentTarget = GetTargetFromTargeting();
+
             if (_damagePending && Time.time >= _damageApplyTime)
             {
                 int pendingVersion = _pendingDamageVersion;
@@ -49,7 +50,6 @@ namespace Madbox.Character
             if (_attackInProgress && Time.time >= _attackEndTime)
             {
                 _attackInProgress = false;
-                TryReacquireTarget();
             }
 
             if (!_isAttacking)
@@ -59,12 +59,8 @@ namespace Madbox.Character
 
             if (!_attackInProgress && !IsTargetValid(_currentTarget))
             {
-                TryReacquireTarget();
-                if (!IsTargetValid(_currentTarget))
-                {
-                    CancelAttack();
-                    return;
-                }
+                CancelAttack();
+                return;
             }
 
             if (!_attackInProgress && Time.time >= _nextAttackTime)
@@ -75,6 +71,8 @@ namespace Madbox.Character
 
         public bool TryStartAttack(Transform target)
         {
+            _currentTarget = GetTargetFromTargeting();
+
             if (IsTargetValid(_currentTarget))
             {
                 _isAttacking = true;
@@ -83,7 +81,7 @@ namespace Madbox.Character
 
             if (!IsTargetValid(target))
             {
-                target = targetingService != null ? targetingService.GetCurrentTarget() : null;
+                target = _currentTarget;
             }
 
             if (!IsTargetValid(target) || Time.time < _nextAttackTime)
@@ -171,7 +169,7 @@ namespace Madbox.Character
             Debug.Log($"HeroCombatService: Attack landed on {target.name}.", this);
         }
 
-        private void TryReacquireTarget()
+        private Transform GetTargetFromTargeting()
         {
             if (targetingService == null)
             {
@@ -181,12 +179,11 @@ namespace Madbox.Character
                     _targetingWarningShown = true;
                 }
 
-                _currentTarget = null;
-                return;
+                return null;
             }
 
             Transform nextTarget = targetingService.GetCurrentTarget();
-            _currentTarget = IsTargetValid(nextTarget) ? nextTarget : null;
+            return IsTargetValid(nextTarget) ? nextTarget : null;
         }
 
         private void AutoAssignReferences()
@@ -196,7 +193,7 @@ namespace Madbox.Character
                 targetingService = GetComponent<HeroTargetingService>();
             }
 
-            if (animationDriver != null)
+            if (animationDriver == null)
             {
                 animationDriver = GetComponent<CharacterAnimationDriver>();
             }
@@ -204,10 +201,20 @@ namespace Madbox.Character
 
         private static bool IsTargetValid(Transform target)
         {
-            return target != null && target.gameObject.activeInHierarchy;
+            if (target == null)
+            {
+                return false;
+            }
+
+            if (target.TryGetComponent(out EnemyTargetable enemyTargetable))
+            {
+                return enemyTargetable.IsTargetable;
+            }
+
+            return target.gameObject.activeInHierarchy;
         }
 
-        public bool AttackInProgress ()
+        public bool AttackInProgress()
         {
             return _attackInProgress;
         }
