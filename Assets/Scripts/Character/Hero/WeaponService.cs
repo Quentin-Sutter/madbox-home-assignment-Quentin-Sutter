@@ -49,9 +49,25 @@ namespace Madbox.Character
             SyncWeaponVisualVisibilityWithState();
         }
 
-        private void Update()
+        private void OnEnable()
         {
-            SyncWeaponVisualVisibilityWithState();
+            if (heroStateController == null)
+            {
+                AutoAssignReferences();
+            }
+
+            if (heroStateController != null)
+            {
+                heroStateController.OnStateChanged += HandleHeroStateChanged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (heroStateController != null)
+            {
+                heroStateController.OnStateChanged -= HandleHeroStateChanged;
+            }
         }
 
         private void OnDestroy()
@@ -201,15 +217,26 @@ namespace Madbox.Character
             }
         }
 
+        private void HandleHeroStateChanged(HeroState state)
+        {
+            bool shouldShowVisual = state == HeroState.Attack;
+            SetWeaponVisualVisibility(shouldShowVisual);
+        }
+
         private void SyncWeaponVisualVisibilityWithState()
         {
             bool shouldShowVisual = heroStateController != null && heroStateController.CurrentState == HeroState.Attack;
-            if (_weaponVisualVisible == shouldShowVisual)
+            SetWeaponVisualVisibility(shouldShowVisual);
+        }
+
+        private void SetWeaponVisualVisibility(bool isVisible)
+        {
+            if (_weaponVisualVisible == isVisible)
             {
                 return;
             }
 
-            _weaponVisualVisible = shouldShowVisual;
+            _weaponVisualVisible = isVisible;
             SetActiveVisualForWeapon(CurrentWeapon);
         }
 

@@ -47,6 +47,7 @@ namespace Madbox.Character
         [SerializeField] private MonoBehaviour combatServiceSource;
 
         public HeroState CurrentState => _currentState;
+        public event System.Action<HeroState> OnStateChanged;
 
         private HeroState _currentState = HeroState.Idle;
         private Transform _attackTarget;
@@ -107,6 +108,7 @@ namespace Madbox.Character
             ExitState(_currentState);
             _currentState = nextState;
             EnterState(_currentState);
+            OnStateChanged?.Invoke(_currentState);
         }
 
         private void EnterState(HeroState state)
