@@ -17,6 +17,7 @@ namespace Madbox.Character
         [SerializeField] private AssetReferenceGameObject visualPrefab;
 
         [Header("Gameplay")]
+        [SerializeField, Min(1)] private int damageOnHit = 1;
         [SerializeField, Min(0f)] private float switchCooldownSeconds = 0.2f;
         [SerializeField, Min(0.05f)] private float attackCooldownSeconds = 0.75f;
         [SerializeField, Range(0f, 1f)] private float hitTimeNormalized = 0.41f;
@@ -27,6 +28,7 @@ namespace Madbox.Character
         public string WeaponId => weaponId;
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? weaponId : displayName;
         public AssetReferenceGameObject VisualPrefab => visualPrefab;
+        public int DamageOnHit => damageOnHit;
         public float SwitchCooldownSeconds => switchCooldownSeconds;
         public float AttackCooldownSeconds => attackCooldownSeconds;
         public float HitTimeNormalized => hitTimeNormalized;

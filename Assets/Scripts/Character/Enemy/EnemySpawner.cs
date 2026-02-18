@@ -158,7 +158,6 @@ namespace Madbox.Character
 
         private bool IsFarEnoughFromPlayer(Vector3 candidate, float minDistanceFromPlayerSqr)
         {
-            ResolvePlayerReference();
             if (playerTransform == null)
             {
                 return true;

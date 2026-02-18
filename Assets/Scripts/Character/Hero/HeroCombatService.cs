@@ -9,8 +9,7 @@ namespace Madbox.Character
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HeroCombatService : MonoBehaviour
-    {
-        [SerializeField, Min(1)] private int attackDamage = 1;
+    { 
         [SerializeField] private CharacterAnimationDriver animationDriver;
         [SerializeField] private HeroTargetingService targetingService;
 
@@ -158,14 +157,14 @@ namespace Madbox.Character
             if (target.TryGetComponent(out EnemyTargetable enemyTargetable) &&
                 enemyTargetable.TryGetDamageable(out IDamageable cachedDamageable))
             {
-                cachedDamageable.ApplyDamage(attackDamage);
+                cachedDamageable.ApplyDamage(_currentWeapon.DamageOnHit);
                 return;
             }
 
             IDamageable damageable = target.GetComponent<IDamageable>();
             if (damageable != null)
             {
-                damageable.ApplyDamage(attackDamage);
+                damageable.ApplyDamage(_currentWeapon.DamageOnHit);
                 return;
             }
 
@@ -196,11 +195,21 @@ namespace Madbox.Character
             {
                 targetingService = GetComponent<HeroTargetingService>();
             }
+
+            if (animationDriver != null)
+            {
+                animationDriver = GetComponent<CharacterAnimationDriver>();
+            }
         }
 
         private static bool IsTargetValid(Transform target)
         {
             return target != null && target.gameObject.activeInHierarchy;
+        }
+
+        public bool AttackInProgress ()
+        {
+            return _attackInProgress;
         }
     }
 }

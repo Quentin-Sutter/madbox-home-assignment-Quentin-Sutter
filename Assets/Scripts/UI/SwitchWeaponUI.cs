@@ -37,21 +37,11 @@ namespace Madbox.UI
 
         private void Awake()
         {
+            AutoWireSerializedReferences();
+
             WireButtons();
             WarnIfReferencesMissing();
-        }
-
-        private void Reset()
-        {
-            AutoWireSerializedReferences();
-            WireButtons();
-        }
-
-        private void OnValidate()
-        {
-            AutoWireSerializedReferences();
-            WireButtons();
-        }
+        } 
 
         private void OnEnable()
         {
@@ -107,7 +97,7 @@ namespace Madbox.UI
 
                 binding.defaultColors = binding.button.colors;
                 int weaponIndex = binding.weaponIndex;
-                binding.button.onClick.RemoveAllListeners();
+                //binding.button.onClick.RemoveAllListeners();
                 binding.button.onClick.AddListener(() => OnWeaponClicked(weaponIndex));
             }
         }

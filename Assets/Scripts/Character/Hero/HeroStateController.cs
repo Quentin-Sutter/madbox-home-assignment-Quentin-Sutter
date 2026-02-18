@@ -22,13 +22,11 @@ namespace Madbox.Character
         [SerializeField] private HeroMovement movement;
         [SerializeField] private HeroRotation rotation;
         [SerializeField] private CharacterAnimationDriver animationDriver;
+        [SerializeField] private HeroTargetingService targetingService;
+        [SerializeField] private HeroCombatService combatService;
 
         [Header("Tuning")]
         [SerializeField, Range(0f, 1f)] private float moveDeadzone = 0.05f;
-
-        [Header("Future Hooks")]
-        [SerializeField] private HeroTargetingService targetingService;
-        [SerializeField] private HeroCombatService combatService;
 
         public HeroState CurrentState => _currentState;
         public event System.Action<HeroState> OnStateChanged;
@@ -80,6 +78,8 @@ namespace Madbox.Character
             {
                 return HeroState.Move;
             }
+
+            if (combatService.IsAttackInProgress) return HeroState.Attack;
 
             bool hasTarget = targetingService != null && targetingService.HasValidTarget();
             return hasTarget ? HeroState.Attack : HeroState.Idle;
@@ -278,6 +278,21 @@ namespace Madbox.Character
 
         private void AutoAssignReferences()
         {
+            if (inputSource == null)
+            {
+                inputSource = GetComponent<JoystickInput>();
+            }
+
+            if (movement == null)
+            {
+                movement = GetComponent<HeroMovement>();
+            }
+
+            if (rotation == null)
+            {
+                rotation = GetComponent<HeroRotation>();
+            }
+
             if (targetingService == null)
             {
                 targetingService = GetComponent<HeroTargetingService>();

@@ -97,6 +97,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   health: {fileID: 4469040851536800705}
+  animationDriver: {fileID: 5132698771204450011}
 --- !u!114 &5132698771204450011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -110,6 +111,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 6926839794853975167}
+  attackClip: {fileID: 7400000, guid: e45f556cec664e74daed8e0ebae61814, type: 3}
   moveSpeedParam: MoveSpeed
   attackTriggerParam: Attack
   damageTriggerParam: Damage

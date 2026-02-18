@@ -566,9 +566,9 @@ MonoBehaviour:
   movement: {fileID: 670278145510243874}
   rotation: {fileID: 889341256701112233}
   animationDriver: {fileID: 3818201722713362545}
+  targetingService: {fileID: 5640136942777245500}
+  combatService: {fileID: 6432174883311883689}
   moveDeadzone: 0.05
-  targetingServiceSource: {fileID: 5640136942777245500}
-  combatServiceSource: {fileID: 6432174883311883689}
 --- !u!114 &6144140081615305750
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -651,6 +651,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   attackDamage: 1
   animationDriver: {fileID: 3818201722713362545}
+  targetingService: {fileID: 0}
 --- !u!143 &2291742064611143131
 CharacterController:
   m_ObjectHideFlags: 0
@@ -735,9 +736,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 461aefd0c256ef0409e380c49c409b1b, type: 2}
   weaponSocket: {fileID: 1993995369825730728}
   defaultWeaponIndex: 0
-  heroMovement: {fileID: 670278145510243874}
-  heroTargetingService: {fileID: 5640136942777245500}
-  heroCombatService: {fileID: 6432174883311883689}
+  speedModifierReceiver: {fileID: 0}
+  rangeReceiver: {fileID: 0}
+  weaponReceiver: {fileID: 0}
   heroStateController: {fileID: 0}
 --- !u!1 &3512741108777884559
 GameObject:
