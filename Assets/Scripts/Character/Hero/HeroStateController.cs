@@ -4,22 +4,6 @@ using UnityEngine;
 
 namespace Madbox.Character
 {
-    public interface IHeroTargetingService
-    {
-        Transform GetCurrentTarget();
-        bool HasValidTarget();
-        void BreakLock();
-        void RefreshTarget();
-    }
-
-    public interface IHeroCombatService
-    {
-        bool TryStartAttack(Transform target);
-        void CancelAttack();
-        Transform CurrentLockedTarget { get; }
-        bool IsAttackInProgress { get; }
-    }
-
     public enum HeroState
     {
         Idle,
