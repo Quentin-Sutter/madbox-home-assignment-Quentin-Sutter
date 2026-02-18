@@ -12,8 +12,12 @@ namespace Madbox.Character
     {
         [SerializeField, Min(1)] private int attackDamage = 1;
         [SerializeField] private CharacterAnimationDriver animationDriver;
+        [SerializeField] private MonoBehaviour targetingServiceSource;
 
         public event Action<float> OnAttackCooldownStarted;
+
+        public Transform CurrentLockedTarget => _currentTarget;
+        public bool IsAttackInProgress => _attackInProgress;
 
         private Transform _currentTarget;
         private float _nextAttackTime;
@@ -24,6 +28,15 @@ namespace Madbox.Character
         private int _pendingDamageVersion;
 
         private WeaponData _currentWeapon;
+        private IHeroTargetingService _targetingService;
+
+        private bool _attackInProgress;
+        private float _attackEndTime;
+
+        private void Awake()
+        {
+            _targetingService = targetingServiceSource as IHeroTargetingService;
+        }
 
         private void Update()
         {
@@ -33,18 +46,28 @@ namespace Madbox.Character
                 ApplyPendingDamage(pendingVersion);
             }
 
+            if (_attackInProgress && Time.time >= _attackEndTime)
+            {
+                _attackInProgress = false;
+                TryReacquireTarget();
+            }
+
             if (!_isAttacking)
             {
                 return;
             }
 
-            if (!IsTargetValid(_currentTarget))
+            if (!_attackInProgress && !IsTargetValid(_currentTarget))
             {
-                CancelAttack();
-                return;
+                TryReacquireTarget();
+                if (!IsTargetValid(_currentTarget))
+                {
+                    CancelAttack();
+                    return;
+                }
             }
 
-            if (Time.time >= _nextAttackTime)
+            if (!_attackInProgress && Time.time >= _nextAttackTime)
             {
                 PerformAttack();
             }
@@ -52,6 +75,17 @@ namespace Madbox.Character
 
         public bool TryStartAttack(Transform target)
         {
+            if (IsTargetValid(_currentTarget))
+            {
+                _isAttacking = true;
+                return true;
+            }
+
+            if (!IsTargetValid(target))
+            {
+                target = _targetingService != null ? _targetingService.GetCurrentTarget() : null;
+            }
+
             if (!IsTargetValid(target) || Time.time < _nextAttackTime)
             {
                 return false;
@@ -67,6 +101,7 @@ namespace Madbox.Character
         {
             _currentTarget = null;
             _isAttacking = false;
+            _attackInProgress = false;
             _damagePending = false;
             _pendingDamageVersion++;
         }
@@ -85,6 +120,8 @@ namespace Madbox.Character
 
             float cooldown = Mathf.Max(0.01f, _currentWeapon.AttackCooldownSeconds);
             _nextAttackTime = Time.time + cooldown;
+            _attackEndTime = _nextAttackTime;
+            _attackInProgress = true;
 
             float animationSpeed = animationDriver != null
                 ? animationDriver.ComputeAttackSpeedForCooldown(cooldown)
@@ -132,6 +169,18 @@ namespace Madbox.Character
             }
 
             Debug.Log($"HeroCombatService: Attack landed on {target.name}.", this);
+        }
+
+        private void TryReacquireTarget()
+        {
+            if (_targetingService == null)
+            {
+                _currentTarget = null;
+                return;
+            }
+
+            Transform nextTarget = _targetingService.GetCurrentTarget();
+            _currentTarget = IsTargetValid(nextTarget) ? nextTarget : null;
         }
 
         private static bool IsTargetValid(Transform target)

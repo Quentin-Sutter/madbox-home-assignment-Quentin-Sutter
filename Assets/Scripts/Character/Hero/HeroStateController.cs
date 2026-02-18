@@ -16,6 +16,8 @@ namespace Madbox.Character
     {
         bool TryStartAttack(Transform target);
         void CancelAttack();
+        Transform CurrentLockedTarget { get; }
+        bool IsAttackInProgress { get; }
     }
 
     public enum HeroState
@@ -166,15 +168,18 @@ namespace Madbox.Character
 
         private void TickAttackState()
         {
-            if (!IsTargetValid(_attackTarget))
+            Transform lockedTarget = _combatService != null ? _combatService.CurrentLockedTarget : null;
+
+            if (!IsTargetValid(lockedTarget) && (_combatService == null || !_combatService.IsAttackInProgress))
             {
                 AcquireAttackTarget();
                 TryStartAttackOnCurrentTarget();
+                lockedTarget = _combatService != null ? _combatService.CurrentLockedTarget : _attackTarget;
             }
 
-            if (IsTargetValid(_attackTarget))
+            if (lockedTarget != null)
             {
-                rotation.FaceTarget(_attackTarget);
+                rotation.FaceTarget(lockedTarget);
             }
         }
 
