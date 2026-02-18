@@ -30,8 +30,6 @@ namespace Madbox.UI
         private float _switchCooldownEndTime;
         private float _attackCooldownEndTime;
         private int _attackCooldownWeaponIndex = -1;
-        private bool _wasSwitchCooldownActive;
-        private bool _wasAttackCooldownActive;
 
         private bool IsSwitchCooldownActive => Time.time < _switchCooldownEndTime;
         private bool IsAttackCooldownActive => Time.time < _attackCooldownEndTime;
@@ -65,6 +63,8 @@ namespace Madbox.UI
                 heroCombatService.OnAttackCooldownStarted += HandleAttackCooldownStarted;
             }
 
+            SubscribeCooldownCompletionEvents();
+
             RefreshButtonsState();
         }
 
@@ -80,21 +80,8 @@ namespace Madbox.UI
             {
                 heroCombatService.OnAttackCooldownStarted -= HandleAttackCooldownStarted;
             }
-        }
 
-        private void Update()
-        {
-            bool isSwitchCooldownActive = IsSwitchCooldownActive;
-            bool isAttackCooldownActive = IsAttackCooldownActive;
-            if (isSwitchCooldownActive == _wasSwitchCooldownActive &&
-                isAttackCooldownActive == _wasAttackCooldownActive)
-            {
-                return;
-            }
-
-            _wasSwitchCooldownActive = isSwitchCooldownActive;
-            _wasAttackCooldownActive = isAttackCooldownActive;
-            RefreshButtonsState();
+            UnsubscribeCooldownCompletionEvents();
         }
 
         private void WireButtons()
@@ -134,7 +121,6 @@ namespace Madbox.UI
         {
             _switchCooldownEndTime = Time.time + Mathf.Max(0f, duration);
             StartCooldownForIndex(_currentWeaponIndex, duration);
-            _wasSwitchCooldownActive = IsSwitchCooldownActive;
             RefreshButtonsState();
         }
 
@@ -143,7 +129,33 @@ namespace Madbox.UI
             _attackCooldownWeaponIndex = _currentWeaponIndex;
             _attackCooldownEndTime = Time.time + Mathf.Max(0f, duration);
             StartCooldownForIndex(_currentWeaponIndex, duration);
-            _wasAttackCooldownActive = IsAttackCooldownActive;
+            RefreshButtonsState();
+        }
+
+        private void HandleCooldownCompleted(CooldownFillButton cooldown)
+        {
+            if (cooldown == null)
+            {
+                return;
+            }
+
+            int weaponIndex = GetWeaponIndexByCooldown(cooldown);
+            if (weaponIndex < 0)
+            {
+                return;
+            }
+
+            if (_attackCooldownWeaponIndex == weaponIndex)
+            {
+                _attackCooldownEndTime = 0f;
+                _attackCooldownWeaponIndex = -1;
+            }
+
+            if (weaponIndex == _currentWeaponIndex)
+            {
+                _switchCooldownEndTime = 0f;
+            }
+
             RefreshButtonsState();
         }
 
@@ -215,6 +227,64 @@ namespace Madbox.UI
             }
 
             return null;
+        }
+
+        private int GetWeaponIndexByCooldown(CooldownFillButton cooldown)
+        {
+            if (weaponButtons == null)
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < weaponButtons.Length; i++)
+            {
+                WeaponButtonBinding binding = weaponButtons[i];
+                if (binding != null && binding.cooldownView == cooldown)
+                {
+                    return binding.weaponIndex;
+                }
+            }
+
+            return -1;
+        }
+
+        private void SubscribeCooldownCompletionEvents()
+        {
+            if (weaponButtons == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < weaponButtons.Length; i++)
+            {
+                CooldownFillButton cooldown = weaponButtons[i]?.cooldownView;
+                if (cooldown == null)
+                {
+                    continue;
+                }
+
+                cooldown.CooldownCompleted -= HandleCooldownCompleted;
+                cooldown.CooldownCompleted += HandleCooldownCompleted;
+            }
+        }
+
+        private void UnsubscribeCooldownCompletionEvents()
+        {
+            if (weaponButtons == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < weaponButtons.Length; i++)
+            {
+                CooldownFillButton cooldown = weaponButtons[i]?.cooldownView;
+                if (cooldown == null)
+                {
+                    continue;
+                }
+
+                cooldown.CooldownCompleted -= HandleCooldownCompleted;
+            }
         }
     }
 }

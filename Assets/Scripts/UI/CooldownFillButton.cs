@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,6 +9,8 @@ namespace Madbox.UI
     /// </summary>
     public sealed class CooldownFillButton : MonoBehaviour
     {
+        public event Action<CooldownFillButton> CooldownCompleted;
+
         [SerializeField] private Button button;
         [SerializeField] private Image fillImage;
 
@@ -35,7 +38,7 @@ namespace Madbox.UI
             float remaining = _cooldownEndTime - Time.time;
             if (remaining <= 0f)
             {
-                SetReadyState();
+                CompleteCooldown();
                 return;
             }
 
@@ -84,6 +87,12 @@ namespace Madbox.UI
             {
                 fillImage.fillAmount = 0f;
             }
+        }
+
+        private void CompleteCooldown()
+        {
+            SetReadyState();
+            CooldownCompleted?.Invoke(this);
         }
     }
 }
