@@ -8,7 +8,7 @@ namespace Madbox.Character
     /// Animation playback is delegated to CharacterAnimationDriver.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HeroCombatService : MonoBehaviour, IHeroCombatService
+    public sealed class HeroCombatService : MonoBehaviour, IHeroCombatService, IWeaponReceiver
     {
         [SerializeField, Min(1)] private int attackDamage = 1;
         [SerializeField] private CharacterAnimationDriver animationDriver;

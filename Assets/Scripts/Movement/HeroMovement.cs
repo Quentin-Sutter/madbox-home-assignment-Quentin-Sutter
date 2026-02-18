@@ -1,4 +1,5 @@
 using UnityEngine;
+using Madbox.Character;
 
 namespace Madbox.Movement
 {
@@ -6,7 +7,7 @@ namespace Madbox.Movement
     /// Executes hero translation from externally provided movement intent.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HeroMovement : MonoBehaviour
+    public sealed class HeroMovement : MonoBehaviour, ISpeedModifierReceiver
     {
         [SerializeField, Min(0f)] private float baseMoveSpeed = 5f;
 

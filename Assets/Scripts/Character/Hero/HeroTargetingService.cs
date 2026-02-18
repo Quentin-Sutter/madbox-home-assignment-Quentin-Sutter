@@ -8,7 +8,7 @@ namespace Madbox.Character
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SphereCollider))]
-    public sealed class HeroTargetingService : MonoBehaviour, IHeroTargetingService
+    public sealed class HeroTargetingService : MonoBehaviour, IHeroTargetingService, IRangeReceiver
     {
         [SerializeField, Min(0.1f)] private float rangeRadius = 3f;
 
