@@ -13,15 +13,28 @@ namespace Madbox.Character
         [SerializeField, Min(0.1f)] private float rangeRadius = 3f;
 
         private readonly HashSet<EnemyTargetable> _inRangeEnemies = new HashSet<EnemyTargetable>();
+        private readonly Dictionary<EnemyTargetable, Health> _trackedEnemyHealth = new Dictionary<EnemyTargetable, Health>();
+        private readonly List<EnemyTargetable> _cleanupBuffer = new List<EnemyTargetable>();
 
         private SphereCollider _rangeTrigger;
         private EnemyTargetable _lockedTarget;
         private bool _triggerWarningShown;
+        private bool _missingHealthWarningShown;
 
         private void Awake()
         {
             _rangeTrigger = GetComponent<SphereCollider>();
             EnsureTriggerSetup();
+        }
+
+        private void OnDisable()
+        {
+            ClearTrackedEnemies();
+        }
+
+        private void OnDestroy()
+        {
+            ClearTrackedEnemies();
         }
 
         private void OnValidate()
@@ -36,8 +49,7 @@ namespace Madbox.Character
                 return _lockedTarget.transform;
             }
 
-            RebuildTrackedEnemiesIfNeeded();
-            _lockedTarget = FindClosestEnemy();
+            RefreshTarget();
             return _lockedTarget != null ? _lockedTarget.transform : null;
         }
 
@@ -49,6 +61,12 @@ namespace Madbox.Character
         public void BreakLock()
         {
             _lockedTarget = null;
+        }
+
+        public void RefreshTarget()
+        {
+            RebuildTrackedEnemiesIfNeeded();
+            _lockedTarget = FindClosestEnemy();
         }
 
         public void SetRange(float newRangeRadius)
@@ -70,11 +88,14 @@ namespace Madbox.Character
                 return;
             }
 
-            _inRangeEnemies.Add(enemy);
+            if (_inRangeEnemies.Add(enemy))
+            {
+                SubscribeToEnemyDeath(enemy);
+            }
 
             if (!IsEnemyValidAndInRange(_lockedTarget))
             {
-                _lockedTarget = FindClosestEnemy();
+                RefreshTarget();
             }
         }
 
@@ -86,7 +107,7 @@ namespace Madbox.Character
                 return;
             }
 
-            _inRangeEnemies.Remove(enemy);
+            RemoveTrackedEnemy(enemy);
             if (_lockedTarget == enemy)
             {
                 _lockedTarget = null;
@@ -121,7 +142,7 @@ namespace Madbox.Character
 
         private bool IsEnemyValidAndInRange(EnemyTargetable enemy)
         {
-            if (enemy == null || !enemy.gameObject.activeInHierarchy)
+            if (enemy == null || !enemy.gameObject.activeInHierarchy || !IsEnemyAlive(enemy))
             {
                 return false;
             }
@@ -138,12 +159,105 @@ namespace Madbox.Character
                 return;
             }
 
-            _inRangeEnemies.RemoveWhere(IsInvalidEnemy);
+            _cleanupBuffer.Clear();
+
+            foreach (EnemyTargetable enemy in _inRangeEnemies)
+            {
+                if (IsInvalidEnemy(enemy) || !IsEnemyAlive(enemy))
+                {
+                    _cleanupBuffer.Add(enemy);
+                }
+            }
+
+            for (int i = 0; i < _cleanupBuffer.Count; i++)
+            {
+                RemoveTrackedEnemy(_cleanupBuffer[i]);
+            }
+
+            _cleanupBuffer.Clear();
         }
 
         private static bool IsInvalidEnemy(EnemyTargetable enemy)
         {
             return enemy == null || !enemy.gameObject.activeInHierarchy;
+        }
+
+        private bool IsEnemyAlive(EnemyTargetable enemy)
+        {
+            if (enemy == null)
+            {
+                return false;
+            }
+
+            if (_trackedEnemyHealth.TryGetValue(enemy, out Health health) && health != null)
+            {
+                return health.IsAlive;
+            }
+
+            return true;
+        }
+
+        private void SubscribeToEnemyDeath(EnemyTargetable enemy)
+        {
+            if (enemy == null || _trackedEnemyHealth.ContainsKey(enemy))
+            {
+                return;
+            }
+
+            Health enemyHealth = enemy.GetComponentInParent<Health>();
+            if (enemyHealth == null)
+            {
+                if (!_missingHealthWarningShown)
+                {
+                    Debug.LogWarning("HeroTargetingService: EnemyTargetable has no Health in self/parents.", this);
+                    _missingHealthWarningShown = true;
+                }
+
+                return;
+            }
+
+            enemyHealth.OnDied += OnTrackedEnemyDied;
+            _trackedEnemyHealth.Add(enemy, enemyHealth);
+        }
+
+        private void RemoveTrackedEnemy(EnemyTargetable enemy)
+        {
+            if (enemy == null)
+            {
+                return;
+            }
+
+            if (_trackedEnemyHealth.TryGetValue(enemy, out Health health) && health != null)
+            {
+                health.OnDied -= OnTrackedEnemyDied;
+            }
+
+            _trackedEnemyHealth.Remove(enemy);
+            _inRangeEnemies.Remove(enemy);
+        }
+
+        private void ClearTrackedEnemies()
+        {
+            if (_trackedEnemyHealth.Count > 0)
+            {
+                foreach (KeyValuePair<EnemyTargetable, Health> pair in _trackedEnemyHealth)
+                {
+                    if (pair.Value != null)
+                    {
+                        pair.Value.OnDied -= OnTrackedEnemyDied;
+                    }
+                }
+
+                _trackedEnemyHealth.Clear();
+            }
+
+            _inRangeEnemies.Clear();
+            _lockedTarget = null;
+        }
+
+        private void OnTrackedEnemyDied()
+        {
+            RefreshTarget();
         }
 
         private EnemyTargetable ResolveEnemyTargetable(Collider other)

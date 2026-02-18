@@ -9,6 +9,7 @@ namespace Madbox.Character
         Transform GetCurrentTarget();
         bool HasValidTarget();
         void BreakLock();
+        void RefreshTarget();
     }
 
     public interface IHeroCombatService
@@ -53,6 +54,7 @@ namespace Madbox.Character
         private bool _inputWarningShown;
         private bool _movementWarningShown;
         private bool _rotationWarningShown;
+        private bool _wasMovingLastFrame;
 
         private void Awake()
         {
@@ -68,6 +70,13 @@ namespace Madbox.Character
             }
 
             MoveIntent intent = inputSource.CurrentIntent;
+            bool isMovingNow = IsMoveIntentActive(intent);
+
+            if (_wasMovingLastFrame && !isMovingNow)
+            {
+                _targetingService?.RefreshTarget();
+            }
+
             HeroState desiredState = EvaluateDesiredState(intent);
 
             if (desiredState != _currentState)
@@ -76,11 +85,12 @@ namespace Madbox.Character
             }
 
             TickCurrentState(intent);
+            _wasMovingLastFrame = isMovingNow;
         }
 
         private HeroState EvaluateDesiredState(MoveIntent intent)
         {
-            bool isMoving = intent.IsMoving && intent.Strength > moveDeadzone && intent.WorldDirection.sqrMagnitude > 0.0001f;
+            bool isMoving = IsMoveIntentActive(intent);
             if (isMoving)
             {
                 return HeroState.Move;
@@ -199,6 +209,11 @@ namespace Madbox.Character
         private static bool IsTargetValid(Transform target)
         {
             return target != null && target.gameObject.activeInHierarchy;
+        }
+
+        private bool IsMoveIntentActive(MoveIntent intent)
+        {
+            return intent.IsMoving && intent.Strength > moveDeadzone && intent.WorldDirection.sqrMagnitude > 0.0001f;
         }
 
         private bool ValidateCoreReferences()
