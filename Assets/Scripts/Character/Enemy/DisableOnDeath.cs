@@ -6,9 +6,10 @@ namespace Madbox.Character
     /// Simple death reaction that disables the object when Health reaches zero.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DisableOnDeath : MonoBehaviour
+    public sealed class DisableOnDeath : MonoBehaviour, IPoolResettable
     {
         [SerializeField] private Health health;
+        [SerializeField] private CharacterAnimationDriver animationDriver;
 
         private void Awake()
         {
@@ -20,6 +21,11 @@ namespace Madbox.Character
             if (health == null)
             {
                 health = GetComponentInParent<Health>();
+            }
+
+            if (animationDriver == null)
+            {
+                animationDriver = GetComponent<CharacterAnimationDriver>() ?? GetComponentInChildren<CharacterAnimationDriver>(true);
             }
         }
 
@@ -43,5 +49,12 @@ namespace Madbox.Character
         {
             gameObject.SetActive(false);
         }
+
+        public void ResetForPoolSpawn()
+        {
+            health?.ResetToMax();
+            animationDriver?.ResetToIdle();
+        }
+
     }
 }

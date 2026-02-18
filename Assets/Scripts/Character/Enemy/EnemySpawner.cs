@@ -192,31 +192,14 @@ namespace Madbox.Character
 
         private void ResetPooledEnemy(GameObject enemy)
         {
-            if (enemy.TryGetComponent(out Health health))
+            if (enemy.TryGetComponent(out IPoolResettable poolResettable))
             {
-                health.ResetToMax();
-            }
-            else
-            {
-                Health healthInChildren = enemy.GetComponentInChildren<Health>(true);
-                if (healthInChildren != null)
-                {
-                    healthInChildren.ResetToMax();
-                }
+                poolResettable.ResetForPoolSpawn();
+                return;
             }
 
-            if (enemy.TryGetComponent(out CharacterAnimationDriver animationDriver))
-            {
-                animationDriver.ResetToIdle();
-            }
-            else
-            {
-                CharacterAnimationDriver animationInChildren = enemy.GetComponentInChildren<CharacterAnimationDriver>(true);
-                if (animationInChildren != null)
-                {
-                    animationInChildren.ResetToIdle();
-                }
-            }
+            IPoolResettable poolResettableInChildren = enemy.GetComponentInChildren<IPoolResettable>(true);
+            poolResettableInChildren?.ResetForPoolSpawn();
         }
 
         private int GetActiveEnemyCount()
