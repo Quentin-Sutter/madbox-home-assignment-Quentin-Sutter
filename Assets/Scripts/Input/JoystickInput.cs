@@ -29,6 +29,8 @@ namespace Madbox.Input
         private bool _cameraWarningShown;
         private ActivePointerType _activePointerType;
         private int _activePointerId = InvalidPointerId;
+        private InputAction _pointAction;
+        private InputAction _pressAction;
 
         private const int MousePointerId = -1;
         private const int InvalidPointerId = int.MinValue;
@@ -46,136 +48,144 @@ namespace Madbox.Input
             {
                 gameplayCamera = Camera.main;
             }
+
+            SetupActions();
         }
 
-        private void Update()
+        private void OnEnable()
+        {
+            SetupActions();
+
+            _pressAction.started += OnPressStarted;
+            _pressAction.canceled += OnPressCanceled;
+            _pointAction.performed += OnPointPerformed;
+
+            _pointAction.Enable();
+            _pressAction.Enable();
+        }
+
+        private void OnDisable()
+        {
+            if (_pressAction != null)
+            {
+                _pressAction.started -= OnPressStarted;
+                _pressAction.canceled -= OnPressCanceled;
+                _pressAction.Disable();
+            }
+
+            if (_pointAction != null)
+            {
+                _pointAction.performed -= OnPointPerformed;
+                _pointAction.Disable();
+            }
+
+            EndDrag();
+        }
+
+
+        private void OnDestroy()
+        {
+            _pressAction?.Dispose();
+            _pointAction?.Dispose();
+            _pressAction = null;
+            _pointAction = null;
+        }
+        /// <summary>
+        /// Action-based setup to keep pointer sources extensible (mouse, touch, pen, etc.)
+        /// and compatible with rebinding workflows.
+        /// </summary>
+        private void SetupActions()
+        {
+            if (_pointAction != null && _pressAction != null)
+            {
+                return;
+            }
+
+            _pointAction = new InputAction(name: "Point", type: InputActionType.Value, binding: "<Pointer>/position");
+            _pressAction = new InputAction(name: "Press", type: InputActionType.Button, binding: "<Pointer>/press");
+        }
+
+        private void OnPressStarted(InputAction.CallbackContext context)
         {
             if (_isDragging)
             {
-                UpdateActiveDrag();
                 return;
             }
 
-            TryStartDragFromTouch();
-            if (_isDragging)
+            int pointerId = GetPointerId(context);
+            if (IsPointerOverUi(pointerId))
             {
                 return;
             }
 
-            TryStartDragFromMouse();
+            Vector2 pressScreenPos = _pointAction.ReadValue<Vector2>();
+            BeginDrag(pressScreenPos, GetPointerType(context), pointerId);
         }
 
-        private void TryStartDragFromTouch()
+        private void OnPointPerformed(InputAction.CallbackContext context)
         {
-            if (Touchscreen.current == null)
+            if (!_isDragging)
             {
                 return;
             }
 
-            var touches = Touchscreen.current.touches;
-            for (int i = 0; i < touches.Count; i++)
+            if (_activePointerType == ActivePointerType.Touch && !IsActiveTouchControl(context.control))
             {
-                TouchControl touch = touches[i];
-                if (!touch.press.wasPressedThisFrame)
-                {
-                    continue;
-                }
-
-                int pointerId = touch.touchId.ReadValue();
-                if (IsPointerOverUi(pointerId))
-                {
-                    continue;
-                }
-
-                BeginDrag(touch.position.ReadValue(), ActivePointerType.Touch, pointerId);
                 return;
             }
+
+            UpdateDrag(context.ReadValue<Vector2>());
         }
 
-        private void TryStartDragFromMouse()
+        private void OnPressCanceled(InputAction.CallbackContext context)
         {
-            Mouse mouse = Mouse.current;
-            if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
+            if (!_isDragging)
             {
                 return;
             }
 
-            if (IsPointerOverUi(MousePointerId))
+            if (_activePointerType == ActivePointerType.Touch && !IsActiveTouchControl(context.control))
             {
                 return;
             }
 
-            BeginDrag(mouse.position.ReadValue(), ActivePointerType.Mouse, MousePointerId);
+            EndDrag();
         }
 
-        private void UpdateActiveDrag()
+        private ActivePointerType GetPointerType(InputAction.CallbackContext context)
         {
-            switch (_activePointerType)
-            {
-                case ActivePointerType.Mouse:
-                    UpdateMouseDrag();
-                    break;
-                case ActivePointerType.Touch:
-                    UpdateTouchDrag();
-                    break;
-                default:
-                    EndDrag();
-                    break;
-            }
+            return context.control?.device is Touchscreen ? ActivePointerType.Touch : ActivePointerType.Mouse;
         }
 
-        private void UpdateMouseDrag()
+        private int GetPointerId(InputAction.CallbackContext context)
         {
-            Mouse mouse = Mouse.current;
-            if (mouse == null || mouse.leftButton.wasReleasedThisFrame || !mouse.leftButton.isPressed)
+            if (context.control?.device is not Touchscreen)
             {
-                EndDrag();
-                return;
+                return MousePointerId;
             }
 
-            UpdateDrag(mouse.position.ReadValue());
+            if (context.control.parent is TouchControl touch)
+            {
+                return touch.touchId.ReadValue();
+            }
+
+            if (Touchscreen.current != null)
+            {
+                return Touchscreen.current.primaryTouch.touchId.ReadValue();
+            }
+
+            return InvalidPointerId;
         }
 
-        private void UpdateTouchDrag()
+        private bool IsActiveTouchControl(InputControl control)
         {
-            if (!TryGetTouchById(_activePointerId, out TouchControl touch))
+            if (control?.parent is not TouchControl touch)
             {
-                EndDrag();
-                return;
-            }
-
-            if (!touch.press.isPressed)
-            {
-                EndDrag();
-                return;
-            }
-
-            UpdateDrag(touch.position.ReadValue());
-        }
-
-        private bool TryGetTouchById(int touchId, out TouchControl touchControl)
-        {
-            touchControl = default;
-
-            if (Touchscreen.current == null)
-            {
-                return false;
-            }
-
-            var touches = Touchscreen.current.touches;
-            for (int i = 0; i < touches.Count; i++)
-            {
-                TouchControl touch = touches[i];
-                if (touch.touchId.ReadValue() != touchId)
-                {
-                    continue;
-                }
-
-                touchControl = touch;
+                // Best effort for <Pointer>-based callbacks where the touch id may not be exposed.
                 return true;
             }
 
-            return false;
+            return touch.touchId.ReadValue() == _activePointerId;
         }
 
         private bool IsPointerOverUi(int pointerId)
