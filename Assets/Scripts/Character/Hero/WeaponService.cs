@@ -4,6 +4,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using Madbox.Movement;
 
 namespace Madbox.Character
 {
@@ -18,9 +19,9 @@ namespace Madbox.Character
         [SerializeField] private int defaultWeaponIndex;
 
         [Header("System References")]
-        [SerializeField] private MonoBehaviour speedModifierReceiverSource;
-        [SerializeField] private MonoBehaviour rangeReceiverSource;
-        [SerializeField] private MonoBehaviour weaponReceiverSource;
+        [SerializeField] private HeroMovement speedModifierReceiver;
+        [SerializeField] private HeroTargetingService rangeReceiver;
+        [SerializeField] private HeroCombatService weaponReceiver;
         [SerializeField] private HeroStateController heroStateController;
 
         public WeaponData CurrentWeapon { get; private set; }
@@ -37,9 +38,6 @@ namespace Madbox.Character
         private bool _isDisposed;
         private bool _isInitialized;
         private bool _isInitializing;
-        private ISpeedModifierReceiver _speedModifierReceiver;
-        private IRangeReceiver _rangeReceiver;
-        private IWeaponReceiver _weaponReceiver;
 
         private void Awake()
         {
@@ -268,9 +266,9 @@ namespace Madbox.Character
 
         private void ApplyWeaponGameplayModifiers(WeaponData weapon)
         {
-            _speedModifierReceiver?.SetSpeedMultiplier(weapon.MoveSpeedMultiplier);
-            _rangeReceiver?.SetRange(weapon.AttackRange);
-            _weaponReceiver?.SetWeapon(weapon);
+            speedModifierReceiver?.SetSpeedMultiplier(weapon.MoveSpeedMultiplier);
+            rangeReceiver?.SetRange(weapon.AttackRange);
+            weaponReceiver?.SetWeapon(weapon);
         }
 
         private void SetActiveVisualForWeapon(WeaponData activeWeapon)
@@ -310,14 +308,20 @@ namespace Madbox.Character
 
         private void AutoAssignReferences()
         {
-            _speedModifierReceiver = ResolveReceiver(speedModifierReceiverSource, out MonoBehaviour speedSource, _speedModifierReceiver);
-            speedModifierReceiverSource = speedSource;
+            if (speedModifierReceiver == null)
+            {
+                speedModifierReceiver = GetComponent<HeroMovement>();
+            }
 
-            _rangeReceiver = ResolveReceiver(rangeReceiverSource, out MonoBehaviour rangeSource, _rangeReceiver);
-            rangeReceiverSource = rangeSource;
+            if (rangeReceiver == null)
+            {
+                rangeReceiver = GetComponent<HeroTargetingService>();
+            }
 
-            _weaponReceiver = ResolveReceiver(weaponReceiverSource, out MonoBehaviour weaponSource, _weaponReceiver);
-            weaponReceiverSource = weaponSource;
+            if (weaponReceiver == null)
+            {
+                weaponReceiver = GetComponent<HeroCombatService>();
+            }
 
             if (heroStateController == null)
             {
@@ -325,34 +329,5 @@ namespace Madbox.Character
             }
         }
 
-        private TReceiver ResolveReceiver<TReceiver>(MonoBehaviour source, out MonoBehaviour resolvedSource, TReceiver currentReceiver)
-            where TReceiver : class
-        {
-            if (source != null)
-            {
-                resolvedSource = source;
-                return source as TReceiver;
-            }
-
-            if (currentReceiver != null)
-            {
-                resolvedSource = null;
-                return currentReceiver;
-            }
-
-            MonoBehaviour[] candidates = GetComponents<MonoBehaviour>();
-            for (int i = 0; i < candidates.Length; i++)
-            {
-                MonoBehaviour candidate = candidates[i];
-                if (candidate is TReceiver receiver)
-                {
-                    resolvedSource = candidate;
-                    return receiver;
-                }
-            }
-
-            resolvedSource = null;
-            return null;
-        }
     }
 }

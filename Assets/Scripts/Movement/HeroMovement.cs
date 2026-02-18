@@ -7,7 +7,7 @@ namespace Madbox.Movement
     /// Executes hero translation from externally provided movement intent.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HeroMovement : MonoBehaviour, ISpeedModifierReceiver
+    public sealed class HeroMovement : MonoBehaviour
     {
         [SerializeField, Min(0f)] private float baseMoveSpeed = 5f;
 
