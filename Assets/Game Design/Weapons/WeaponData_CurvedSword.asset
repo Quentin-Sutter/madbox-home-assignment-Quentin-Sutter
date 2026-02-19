@@ -21,7 +21,7 @@ MonoBehaviour:
     m_EditorAssetChanged: 0
   damageOnHit: 1
   switchCooldownSeconds: 0.2
-  attackCooldownSeconds: 0.5
+  attackCooldownSeconds: 0.75
   hitTimeNormalized: 0.41
   ultimateCooldownSeconds: 3
   moveSpeedMultiplier: 1.5

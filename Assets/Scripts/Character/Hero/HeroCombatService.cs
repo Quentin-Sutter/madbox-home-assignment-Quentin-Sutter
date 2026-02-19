@@ -59,7 +59,7 @@ namespace Madbox.Character
 
             if (!_attackInProgress && !IsTargetValid(_currentTarget))
             {
-                CancelAttack();
+                CancelAttack(); 
                 return;
             }
 
@@ -212,11 +212,6 @@ namespace Madbox.Character
             }
 
             return target.gameObject.activeInHierarchy;
-        }
-
-        public bool AttackInProgress()
-        {
-            return _attackInProgress;
         }
     }
 }

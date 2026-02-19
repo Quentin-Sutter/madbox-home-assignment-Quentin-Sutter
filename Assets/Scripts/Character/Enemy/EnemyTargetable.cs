@@ -15,7 +15,7 @@ namespace Madbox.Character
         public IDamageable Damageable { get; private set; }
         public bool IsTargetable => isActiveAndEnabled && gameObject.activeInHierarchy && (_health == null || _health.IsAlive);
 
-        private Object _damageableObject;
+        private UnityEngine.Object _damageableObject;
         private Health _health;
         private bool _missingDamageableWarningShown;
         private bool _isQuitting;
